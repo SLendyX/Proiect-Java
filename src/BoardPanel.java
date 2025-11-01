@@ -47,7 +47,7 @@ public class BoardPanel extends JPanel {
         FontMetrics fm = g.getFontMetrics();
 
         String columns = "abcdefgh";
-        String rows = "12345678";
+        String rows = "87654321";
 
         for(int cell=0;cell<8;cell++){
             int[] coordinatesColumns = getCoordinatesPos(startX, startY, cell, cellSize, margin, fm, true);
