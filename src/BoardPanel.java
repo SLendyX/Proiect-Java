@@ -61,6 +61,30 @@ public class BoardPanel extends JPanel {
             g.drawString(rows.substring(cell, cell+1),coordinatesRows[0],coordinatesRows[1]);
             g.drawString(rows.substring(cell, cell+1),coordinatesRows[0] + boardSize - margin/2,coordinatesRows[1]);
         }
+
+
+        //TODO: generare ceas
+        //5:00
+        //5:00
+
+        /*
+        int fontSize = max(10, cellSize/5);
+
+        Font font = new Font("Arial", Font.BOLD, fontSize);
+        g.setFont(font);
+        g.setColor(new Color(227, 227, 227));
+
+        String timp = "..";
+
+        xPos = startX + boardSize + 20
+        yPos = startY + boardSize/2
+                startY + boardSize/2 + cellSize
+
+        g.drawString("string", xPos, yPos)
+
+        * */
+
+
     }
 
     public static int[] getCoordinatesPos(int x, int y, int index, int size, int margin, FontMetrics fontMetrics, boolean isColumn){
