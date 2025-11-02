@@ -13,8 +13,9 @@ public class BoardPanel extends JPanel {
 
     public void printBoard(Graphics g){
         int boardSize = min(getWidth(), getHeight());
-        int startX = (getWidth() - boardSize) / 2;
+        int startX = getWidth() - boardSize - 223 > 200 ? (getWidth() - boardSize)/2 : getWidth() - boardSize - 223;
         int startY = (getHeight() - boardSize) / 2;
+
 
 
         int margin = boardSize*7/100;
@@ -80,11 +81,3 @@ public class BoardPanel extends JPanel {
     }
 
 }
-
-
-
-//incercare esuata de a crea o bordura
-//        g.drawLine(startX+margin/2-1,startY+margin/2 -1,startX+margin/2 -1,startY-margin/2 - 3 + boardSize);
-//        g.drawLine(startX+margin/2 -1,startY-margin/2 - 3 + boardSize,startX-margin/2 - 3 + boardSize,startY-margin/2 - 3 + boardSize);
-//        g.drawLine(startX-margin/2 - 3 + boardSize,startY-margin/2 - 3 + boardSize,startX-margin/2 - 3 + boardSize,startY+margin/2 - 1);
-//        g.drawLine(startX+margin/2 -1 ,startY+margin/2 - 1,startX-margin/2 - 3 + boardSize,startY+margin/2 -1);
