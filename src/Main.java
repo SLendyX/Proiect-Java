@@ -1,3 +1,5 @@
+import board.BoardPanel;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -24,7 +26,5 @@ public class Main {
         frame.add(board);
 
 //        board.repaint();
-
-
     }
 }
