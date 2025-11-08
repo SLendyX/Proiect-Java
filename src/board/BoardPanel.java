@@ -3,18 +3,96 @@ import pieces.*;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
 public class BoardPanel extends JPanel {
     String defaultFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+    BoardParameters boardParam = null;
+    Piece[][] piecesArray = null;
+
+    public BoardPanel(){
+        addMouseListener(new MouseAdapter(){
+            @Override
+            public void mousePressed(MouseEvent e){
+                handleMouseClick(e);
+            }
+        });
+    }
+
+    public String getCurrentFen(){
+        StringBuilder fen = new StringBuilder();
+
+        int i=0;
+        int emptySpace;
+        for(Piece[] row : piecesArray){
+            emptySpace = 0;
+            for(Piece p : row){
+                if(p == null) {
+                    emptySpace++;
+                }
+                else{
+                    if(emptySpace > 0){
+                        fen.append(Integer.toString(emptySpace));
+                        emptySpace = 0;
+                    }
+                    fen.append(p.getFenChar());
+                }
+            }
+            if(emptySpace > 0)
+                fen.append(Integer.toString(emptySpace));
+
+            if(i++ < 7)
+                fen.append("/");
+        }
+
+        return fen.toString();
+    }
+
+    public String getChessCoords(int x, int y){
+        String cols = "abcdefgh";
+        String rows = "87654321";
+
+        return String.valueOf(cols.charAt(x)) +
+                rows.charAt(y);
+    }
+
+
+    private void handleMouseClick(MouseEvent e){
+        int cellSize = boardParam.cellSize;
+        int margin = boardParam.margin;
+        int startX = boardParam.startX;
+        int startY = boardParam.startY;
+
+        try{
+            if(e.getX() < startX + margin/2 || e.getX() > startX + boardParam.boardSize - margin/2 ||
+                    e.getY() < startY + margin/2 || e.getY() > startY + boardParam.boardSize - margin/2) {
+                throw new OutOfBoardException("Clicked outside the board");
+            }
+            int x = (e.getX() - startX - margin/2)/cellSize;
+            int y = (e.getY() - margin/2)/cellSize;
+
+            if(x < 0 || x > 7 || y < 0 || y > 7){
+                throw new OutOfBoardException("Clicked outside the board");
+            }
+
+            System.out.printf("x:%d  y:%d  chess_coordintes: %s%n", x, y, getChessCoords(x, y));
+        } catch (OutOfBoardException ex) {
+            System.err.println(ex.getMessage());
+        }
+    }
 
     @Override
     public void paintComponent(Graphics g){
         super.paintComponent(g);
         printGame(g);
     }
+
+
 
     public void printGame(Graphics g){
         int boardSize = min(getWidth(), getHeight());
@@ -23,7 +101,7 @@ public class BoardPanel extends JPanel {
         int margin = boardSize*7/100;
         int cellSize = (boardSize-margin)/8;
 
-        BoardParameters boardParam = new BoardParameters(startX,
+        boardParam = new BoardParameters(startX,
                 startY,
                 boardSize,
                 cellSize,
@@ -39,7 +117,7 @@ public class BoardPanel extends JPanel {
                 "SansSerif",
                 new Color(227, 227, 227));
 
-        Piece[][] piecesArray = instantiatePieceArray(defaultFen);
+        piecesArray = instantiatePieceArray(defaultFen);
 
         printPieces(g, boardParam, piecesArray);
     }
@@ -188,18 +266,14 @@ public class BoardPanel extends JPanel {
 }
 
 /*
-00: a1, 01: b1, 02: c1, 03: d1, 04: e1, 05: f1, 06: g1, 07: h1
+70: a8, 71: b8, 72: c8, 73: d8, 74: e8, 75: f8, 76: g8, 77: h8
 .
 .
 ij: column[j]row[i]
 .
 .
-0: a8, 71: b8, 72: c8, 73: d8, 74: e8, 75: f8, 76: g8, 77: h8
-
+00: a1, 01: b1, 02: c1, 03: d1, 04: e1, 05: f1, 06: g1, 07: h1
  */
-
-
-
 
 
 //TODO: generare ceas
@@ -222,6 +296,3 @@ ij: column[j]row[i]
         g.drawString("string", xPos, yPos)
 
         * */
-
-//        Image image = new ImageIcon("./data/piese_negre/pion-negru.png").getImage();
-//        g.drawImage(image,startX+margin/2 + cellSize * 15/100,startY+margin/2 + cellSize* 15/100,cellSize*70/100,cellSize*70/100,this);
