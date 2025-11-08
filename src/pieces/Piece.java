@@ -1,5 +1,7 @@
 package pieces;
 
+import engine.PiecePosition;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -8,7 +10,7 @@ public abstract class Piece  {
     Image image;
     String type;
     char fenChar;
-
+    PiecePosition piecePosition;
 
     Piece(boolean isWhite,String pieceType) {
         this.isWhite = isWhite;
@@ -32,5 +34,20 @@ public abstract class Piece  {
     public char getFenChar() {
         return fenChar;
     }
+
+    public void setPosition(int x, int y){
+        this.piecePosition = new PiecePosition(x, y) ;
+    }
+
+    public void setPosition(int x, int y, boolean isReversed){
+        this.piecePosition = new PiecePosition(x,y, isReversed);
+    }
+
+    public PiecePosition getPostion(){
+        return this.piecePosition;
+    }
+
+    public abstract boolean canMove(int x, int y);
+    public abstract PiecePosition[] getMoves(int x, int y);
 
 }

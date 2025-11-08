@@ -5,15 +5,18 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import engine.*;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
 public class BoardPanel extends JPanel {
     String defaultFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+
     BoardParameters boardParam = null;
     Piece[][] piecesArray = null;
+    ChessEngine chessEngine = new ChessEngine();
+
 
     public BoardPanel(){
         addMouseListener(new MouseAdapter(){
@@ -24,44 +27,6 @@ public class BoardPanel extends JPanel {
         });
     }
 
-    public String getCurrentFen(){
-        StringBuilder fen = new StringBuilder();
-
-        int i=0;
-        int emptySpace;
-        for(Piece[] row : piecesArray){
-            emptySpace = 0;
-            for(Piece p : row){
-                if(p == null) {
-                    emptySpace++;
-                }
-                else{
-                    if(emptySpace > 0){
-                        fen.append(Integer.toString(emptySpace));
-                        emptySpace = 0;
-                    }
-                    fen.append(p.getFenChar());
-                }
-            }
-            if(emptySpace > 0)
-                fen.append(Integer.toString(emptySpace));
-
-            if(i++ < 7)
-                fen.append("/");
-        }
-
-        return fen.toString();
-    }
-
-    public String getChessCoords(int x, int y){
-        String cols = "abcdefgh";
-        String rows = "87654321";
-
-        return String.valueOf(cols.charAt(x)) +
-                rows.charAt(y);
-    }
-
-
     private void handleMouseClick(MouseEvent e){
         int cellSize = boardParam.cellSize;
         int margin = boardParam.margin;
@@ -71,17 +36,23 @@ public class BoardPanel extends JPanel {
         try{
             if(e.getX() < startX + margin/2 || e.getX() > startX + boardParam.boardSize - margin/2 ||
                     e.getY() < startY + margin/2 || e.getY() > startY + boardParam.boardSize - margin/2) {
-                throw new OutOfBoardException("Clicked outside the board");
+                throw new OutOfBoardException("Clicked outside the board!");
             }
             int x = (e.getX() - startX - margin/2)/cellSize;
             int y = (e.getY() - margin/2)/cellSize;
 
             if(x < 0 || x > 7 || y < 0 || y > 7){
-                throw new OutOfBoardException("Clicked outside the board");
+                throw new OutOfBoardException("Clicked outside the board!");
             }
 
-            System.out.printf("x:%d  y:%d  chess_coordintes: %s%n", x, y, getChessCoords(x, y));
-        } catch (OutOfBoardException ex) {
+            if(piecesArray[y][x] == null){
+                throw new OutOfPieceMatrixException("Selected square does not contain a chess piece!");
+            }
+
+            PiecePosition pos = piecesArray[y][x].getPostion();
+
+            System.out.printf("Clicked on: x:%d  y:%d  chess_coordinates: %s%nPiece is at: x:%d  y:%d  chess_coordinates: %s%n", x, y, chessEngine.getChessCoords(x, y, boardParam.isReversed), pos.x, pos.y, pos.chessCoordinate);
+        } catch (OutOfBoardException | OutOfPieceMatrixException ex) {
             System.err.println(ex.getMessage());
         }
     }
@@ -91,8 +62,6 @@ public class BoardPanel extends JPanel {
         super.paintComponent(g);
         printGame(g);
     }
-
-
 
     public void printGame(Graphics g){
         int boardSize = min(getWidth(), getHeight());
@@ -109,6 +78,8 @@ public class BoardPanel extends JPanel {
                 new Color(223, 222, 222),
                 new Color(181, 136, 99),
                 new Color(240, 217, 181));
+
+        boardParam.switchBoardOrientation();
 
         printBoard(g, boardParam);
 
@@ -130,10 +101,18 @@ public class BoardPanel extends JPanel {
         //Patratelele care au un offset de la margine
         for(int row=0;row<8;row++){
             for(int col=0;col<8;col++){
-                if((row+col)%2==1){
-                    g.setColor(boardParam.darkSquare);
+                if(boardParam.isReversed){
+                    if((row+col)%2==0){
+                        g.setColor(boardParam.darkSquare);
+                    }else {
+                        g.setColor(boardParam.lightSquare);
+                    }
                 }else {
-                    g.setColor(boardParam.lightSquare);
+                    if((row+col)%2==1){
+                        g.setColor(boardParam.darkSquare);
+                    }else {
+                        g.setColor(boardParam.lightSquare);
+                    }
                 }
 
                 int xPos = getXPos(boardParam, col);
@@ -163,8 +142,16 @@ public class BoardPanel extends JPanel {
 
         FontMetrics fm = g.getFontMetrics();
 
-        String columns = "abcdefgh";
-        String rows = "87654321";
+        String columns;
+        String rows;
+
+        if(boardParam.isReversed){
+            columns = "hgfedcba";
+            rows = "12345678";
+        }else{
+            columns = "abcdefgh";
+            rows = "87654321";
+        }
 
         for(int cell=0;cell<8;cell++){
             /**
@@ -218,7 +205,9 @@ public class BoardPanel extends JPanel {
                         pieces[row][col++] = null;
                     }
                 }else {
-                    pieces[row][col++] = instantiatePiece(fenCol);
+                    pieces[row][col] = instantiatePiece(fenCol);
+                    pieces[row][col].setPosition(col, row, boardParam.isReversed);
+                    col++;
                 }
             }
             col= 0;
@@ -248,20 +237,35 @@ public class BoardPanel extends JPanel {
 
     public void printPieces(Graphics g, BoardParameters boardParam, Piece[][] pieces){
         int pieceCount =0;
-        for(int row=0;row<8;row++){
-            for(int col=0;col<8;col++){
-                if(pieces[row][col] != null){
-                    pieceCount++;
-                    int xPos = getXPos(boardParam, col);
-                    int yPos = getYPos(boardParam, row);
 
-                    g.drawImage(pieces[row][col].getImage(), xPos, yPos, boardParam.cellSize, boardParam.cellSize, this);
+        if(boardParam.isReversed){
+            for(int row = 7;row >=0;row--){
+                for(int col = 7;col >=0;col--){
+                    pieceCount = getPieceCount(g, boardParam, pieces, pieceCount, row, col);
+
                 }
+            }
+        }else{
+            for(int row = 0;row < 8;row++){
+                for(int col = 0;col < 8;col++){
+                    pieceCount = getPieceCount(g, boardParam, pieces, pieceCount, row, col);
 
+                }
             }
         }
     }
 
+    private int getPieceCount(Graphics g, BoardParameters boardParam, Piece[][] pieces, int pieceCount, int row, int col) {
+        if(pieces[row][col] != null){
+            pieceCount++;
+            boolean isReversed = boardParam.isReversed;
+            int xPos = getXPos(boardParam, col);
+            int yPos = isReversed ? getYPos(boardParam, 7-row) :getYPos(boardParam, row);
+
+            g.drawImage(pieces[row][col].getImage(), xPos, yPos, boardParam.cellSize, boardParam.cellSize, this);
+        }
+        return pieceCount;
+    }
 
 }
 
@@ -275,6 +279,7 @@ ij: column[j]row[i]
 00: a1, 01: b1, 02: c1, 03: d1, 04: e1, 05: f1, 06: g1, 07: h1
  */
 
+//ex fen: "r1bk3r/p2pBpNp/n4n2/1p1NP2P/6P1/3P4/P1P1K3/q5b1"
 
 //TODO: generare ceas
 //5:00
