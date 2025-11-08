@@ -241,21 +241,21 @@ public class BoardPanel extends JPanel {
         if(boardParam.isReversed){
             for(int row = 7;row >=0;row--){
                 for(int col = 7;col >=0;col--){
-                    pieceCount = getPieceCount(g, boardParam, pieces, pieceCount, row, col);
+                    pieceCount = drawChessPiece(g, boardParam, pieces, pieceCount, row, col);
 
                 }
             }
         }else{
             for(int row = 0;row < 8;row++){
                 for(int col = 0;col < 8;col++){
-                    pieceCount = getPieceCount(g, boardParam, pieces, pieceCount, row, col);
+                    pieceCount = drawChessPiece(g, boardParam, pieces, pieceCount, row, col);
 
                 }
             }
         }
     }
 
-    private int getPieceCount(Graphics g, BoardParameters boardParam, Piece[][] pieces, int pieceCount, int row, int col) {
+    private int drawChessPiece(Graphics g, BoardParameters boardParam, Piece[][] pieces, int pieceCount, int row, int col) {
         if(pieces[row][col] != null){
             pieceCount++;
             boolean isReversed = boardParam.isReversed;
