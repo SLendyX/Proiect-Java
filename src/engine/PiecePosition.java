@@ -5,6 +5,8 @@ public class PiecePosition {
     public int x;
     public int y;
 
+    //new PiecePosition(x,y);
+
     public PiecePosition(int x, int y)
     {
         this.chessCoordinate=new ChessEngine().getChessCoords(x,y);

@@ -9,12 +9,12 @@ public class Rook extends Piece {
 
     //TODO: pice move logic
     @Override
-    public boolean canMove(int x, int y){
+    public boolean canMove(int x, int y, Piece[][] piecesArray){
         return true;
     }
 
     @Override
-    public PiecePosition[] getMoves(int x, int y){
+    public PiecePosition[] getMoves(int x, int y, Piece[][] piecesArray){
 
         return null;
     }

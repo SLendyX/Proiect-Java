@@ -52,6 +52,7 @@ public class BoardPanel extends JPanel {
             PiecePosition pos = piecesArray[y][x].getPostion();
 
             System.out.printf("Clicked on: x:%d  y:%d  chess_coordinates: %s%nPiece is at: x:%d  y:%d  chess_coordinates: %s%n", x, y, chessEngine.getChessCoords(x, y, boardParam.isReversed), pos.x, pos.y, pos.chessCoordinate);
+
         } catch (OutOfBoardException | OutOfPieceMatrixException ex) {
             System.err.println(ex.getMessage());
         }
@@ -79,7 +80,7 @@ public class BoardPanel extends JPanel {
                 new Color(181, 136, 99),
                 new Color(240, 217, 181));
 
-        boardParam.switchBoardOrientation();
+//        boardParam.switchBoardOrientation();
 
         printBoard(g, boardParam);
 

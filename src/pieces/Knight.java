@@ -9,12 +9,12 @@ public class Knight extends Piece {
 
     //TODO: de creat logica pentru miscare
     @Override
-    public boolean canMove(int x, int y){
+    public boolean canMove(int x, int y, Piece[][] piecesArray){
         return true;
     }
 
     @Override
-    public PiecePosition[] getMoves(int x, int y){
+    public PiecePosition[] getMoves(int x, int y, Piece[][] piecesArray){
 
         return null;
     }

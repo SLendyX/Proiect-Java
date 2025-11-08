@@ -47,7 +47,23 @@ public abstract class Piece  {
         return this.piecePosition;
     }
 
-    public abstract boolean canMove(int x, int y);
-    public abstract PiecePosition[] getMoves(int x, int y);
+    public abstract boolean canMove(int x, int y, Piece[][] piecesArray);
+
+    //este ceva in cale returneaza fals
+
+
+    public abstract PiecePosition[] getMoves(int x, int y, Piece[][] piecesArray);
+
+    /*
+        //for loop care verifica daca exista sau nu inamici in cale
+        Stack<PiecePosition> stack = new Stack<>();
+
+        for(...){
+            //logica if pentru verificare patrate
+            stack.push(new PiecePosition(x,y));
+        }
+        stack.toArray();
+    * */
+
 
 }
