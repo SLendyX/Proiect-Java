@@ -92,6 +92,7 @@ public class BoardPanel extends JPanel {
         piecesArray = instantiatePieceArray(defaultFen);
 
         printPieces(g, boardParam, piecesArray);
+        printTimer(g, boardParam);
     }
 
     public void printBoard(Graphics g, BoardParameters boardParam){
@@ -268,6 +269,26 @@ public class BoardPanel extends JPanel {
         return pieceCount;
     }
 
+    public void printTimer(Graphics g, BoardParameters boardParam){
+        int cellSize = boardParam.cellSize;
+        int fontSize = max(10, cellSize/5);
+        Font font = new Font("Arial", Font.BOLD, fontSize);
+
+        g.setFont(font);
+        g.setColor(new Color(1,1,1));
+
+        String timpPlayer1 = "5:00";
+        String timpPlayer2 = "5:00";
+        int xtimpPlayer1 = boardParam.startX + boardParam.boardSize + boardParam.margin;
+        int ytimpPlayer1  = boardParam.startY + boardParam.boardSize/2 + cellSize;
+        int xtimpPlayer2  = boardParam.startX + boardParam.boardSize + boardParam.margin;
+        int ytimpPlayer2 = boardParam.startY + boardParam.boardSize/2;
+
+        g.drawString(timpPlayer1, xtimpPlayer1, ytimpPlayer1);
+        g.drawString(timpPlayer2, xtimpPlayer2, ytimpPlayer2);
+
+    }
+
 }
 
 /*
@@ -282,23 +303,3 @@ ij: column[j]row[i]
 
 //ex fen: "r1bk3r/p2pBpNp/n4n2/1p1NP2P/6P1/3P4/P1P1K3/q5b1"
 
-//TODO: generare ceas
-//5:00
-//5:00
-
-        /*
-        int fontSize = max(10, cellSize/5);
-
-        Font font = new Font("Arial", Font.BOLD, fontSize);
-        g.setFont(font);
-        g.setColor(new Color(227, 227, 227));
-
-        String timp = "..";
-
-        xPos = startX + boardSize + 20
-        yPos = startY + boardSize/2
-                startY + boardSize/2 + cellSize
-
-        g.drawString("string", xPos, yPos)
-
-        * */
