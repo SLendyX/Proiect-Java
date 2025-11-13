@@ -14,13 +14,16 @@ public class Knight extends Piece {
     @Override
     public boolean canMove(int x, int y, Piece[][] piecesArray){
         if(x>=0 && x<8  && y>=0 && y<8){
-            return piecesArray[x][y] == null;
+            return piecesArray[y][x] == null;
         }
         return false;
     }
 
     @Override
-    public PiecePosition[] getMoves(int x, int y, Piece[][] piecesArray){
+    public PiecePosition[] getMoves(Piece[][] piecesArray){
+        int x = getPostion().x;
+        int y = getPostion().y;
+
         List<PiecePosition> moves = new ArrayList<>();
         int[][] offsets = {
                 {2,1},{2,-1},{-2,1},{-2,-1},

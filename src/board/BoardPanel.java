@@ -5,18 +5,23 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.Arrays;
+
 import engine.*;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
 public class BoardPanel extends JPanel {
-    String defaultFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+//    String defaultFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+
+    String defaultFen = "8/8/8/8/3nQ2/8/PPPPPPPP/RNBQKBNR";
+
 
     BoardParameters boardParam = null;
     Piece[][] piecesArray = null;
     ChessEngine chessEngine = new ChessEngine();
-
+    PiecePosition[] movesArray = null;
 
     public BoardPanel(){
         addMouseListener(new MouseAdapter(){
@@ -49,9 +54,21 @@ public class BoardPanel extends JPanel {
                 throw new OutOfPieceMatrixException("Selected square does not contain a chess piece!");
             }
 
-            PiecePosition pos = piecesArray[y][x].getPostion();
+            Piece piece =  piecesArray[y][x];
+
+
+            PiecePosition pos = piece.getPostion();
 
             System.out.printf("Clicked on: x:%d  y:%d  chess_coordinates: %s%nPiece is at: x:%d  y:%d  chess_coordinates: %s%n", x, y, chessEngine.getChessCoords(x, y, boardParam.isReversed), pos.x, pos.y, pos.chessCoordinate);
+
+            if(piece.getType().equals("queen")){
+                movesArray = piece.getMoves(piecesArray);
+                repaint();
+            }else if(piece.getType().equals("knight")){
+                movesArray = piece.getMoves(piecesArray);
+                repaint();
+            }
+
 
         } catch (OutOfBoardException | OutOfPieceMatrixException ex) {
             System.err.println(ex.getMessage());
@@ -93,6 +110,8 @@ public class BoardPanel extends JPanel {
 
         printPieces(g, boardParam, piecesArray);
         printTimer(g, boardParam);
+
+        printMoves(movesArray, g, boardParam);
     }
 
     public void printBoard(Graphics g, BoardParameters boardParam){
@@ -268,6 +287,24 @@ public class BoardPanel extends JPanel {
         }
         return pieceCount;
     }
+
+    public void printMoves(PiecePosition[] moves, Graphics g, BoardParameters boardParam){
+        if(moves == null){
+            return;
+        }
+
+        System.out.println("Drawing moves ...");
+
+
+        g.setColor(Color.red);
+        for(PiecePosition move: moves){
+            int xPos = getXPos(boardParam, move.x);
+            int yPos = getYPos(boardParam, move.y);
+
+            g.fillRect(xPos,yPos,boardParam.cellSize,boardParam.cellSize);
+        }
+    }
+
 
     public void printTimer(Graphics g, BoardParameters boardParam){
         int cellSize = boardParam.cellSize;

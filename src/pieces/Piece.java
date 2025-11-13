@@ -47,12 +47,12 @@ public abstract class Piece  {
         return this.piecePosition;
     }
 
-    public abstract boolean canMove(int x, int y, Piece[][] piecesArray);
+    public abstract boolean canMove(int moveX, int moveY, Piece[][] piecesArray);
 
     //este ceva in cale returneaza fals
 
 
-    public abstract PiecePosition[] getMoves(int x, int y, Piece[][] piecesArray);
+    public abstract PiecePosition[] getMoves(Piece[][] piecesArray);
 
     /*
         //for loop care verifica daca exista sau nu inamici in cale

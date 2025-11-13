@@ -16,7 +16,7 @@ public class Bishop extends Piece {
     }
 
     @Override
-    public PiecePosition[] getMoves(int x, int y, Piece[][] piecesArray){
+    public PiecePosition[] getMoves(Piece[][] piecesArray){
         return null;
     }
 }
