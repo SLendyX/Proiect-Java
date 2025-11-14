@@ -1,36 +1,46 @@
 package board;
-import pieces.*;
+
+import engine.ChessEngine;
+import engine.Move;
+import engine.OutOfPieceMatrixException;
+import pieces.Piece;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.Arrays;
-
-import engine.*;
+import java.util.Map;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
 public class BoardPanel extends JPanel {
-//    String defaultFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
-
-    String defaultFen = "8/8/8/8/3nQ2/8/PPPPPPPP/RNBQKBNR";
-
-
-    BoardParameters boardParam = null;
-    Piece[][] piecesArray = null;
     ChessEngine chessEngine = new ChessEngine();
-    PiecePosition[] movesArray = null;
+    BoardParameters boardParam;
 
     public BoardPanel(){
+        boardParam = new BoardParameters();
+        chessEngine.setBoardParams(boardParam);
+        chessEngine.instantiatePieceArray();
+
         addMouseListener(new MouseAdapter(){
             @Override
             public void mousePressed(MouseEvent e){
                 handleMouseClick(e);
             }
         });
+//        addMouseListener(new MouseAdapter(){
+//            @Override
+//            public void mouseEntered(MouseEvent e){
+//                handleMouseHover(e);
+//            }
+//        });
     }
+
+
+//    private void handleMouseHover(MouseEvent e){
+//        e.
+//    }
 
     private void handleMouseClick(MouseEvent e){
         int cellSize = boardParam.cellSize;
@@ -50,27 +60,26 @@ public class BoardPanel extends JPanel {
                 throw new OutOfBoardException("Clicked outside the board!");
             }
 
-            if(piecesArray[y][x] == null){
+            Piece piece =  chessEngine.piecesArray[y][x];
+
+            if(chessEngine.doesMoveExist(x, y) && chessEngine.piecesArray[y][x] == null){
+                System.out.printf("Moved %s to %s.%n", chessEngine.getMove(x,y).moveAuthor.getType(), chessEngine.getChessCoords(x,y));
+                chessEngine.swapSquares(chessEngine.getMove(x, y));
+                chessEngine.setMovesArray(null);
+                repaint();
+            }else if(chessEngine.piecesArray[y][x] == null){
                 throw new OutOfPieceMatrixException("Selected square does not contain a chess piece!");
-            }
-
-            Piece piece =  piecesArray[y][x];
-
-
-            PiecePosition pos = piece.getPostion();
-
-            System.out.printf("Clicked on: x:%d  y:%d  chess_coordinates: %s%nPiece is at: x:%d  y:%d  chess_coordinates: %s%n", x, y, chessEngine.getChessCoords(x, y, boardParam.isReversed), pos.x, pos.y, pos.chessCoordinate);
-
-            if(piece.getType().equals("queen")){
-                movesArray = piece.getMoves(piecesArray);
-                repaint();
-            }else if(piece.getType().equals("knight")){
-                movesArray = piece.getMoves(piecesArray);
+            }else{
+                chessEngine.setMovesArray(piece);
                 repaint();
             }
 
+//            PiecePosition pos = piece.getPostion();
+//            System.out.printf("Clicked on: x:%d  y:%d  chess_coordinates: %s%nPiece is at: x:%d  y:%d  chess_coordinates: %s%n", x, y, chessEngine.getChessCoords(x, y, boardParam.isReversed), pos.x, pos.y, pos.chessCoordinate);
 
         } catch (OutOfBoardException | OutOfPieceMatrixException ex) {
+            chessEngine.setMovesArray(null);
+            repaint();
             System.err.println(ex.getMessage());
         }
     }
@@ -82,13 +91,14 @@ public class BoardPanel extends JPanel {
     }
 
     public void printGame(Graphics g){
+//        boardParam.switchBoardOrientation();
         int boardSize = min(getWidth(), getHeight());
         int startX = getWidth() - boardSize - 223 > 200 ? (getWidth() - boardSize)/2 : getWidth() - boardSize - 223;
         int startY = (getHeight() - boardSize) / 2;
         int margin = boardSize*7/100;
         int cellSize = (boardSize-margin)/8;
 
-        boardParam = new BoardParameters(startX,
+        this.boardParam = new BoardParameters(startX,
                 startY,
                 boardSize,
                 cellSize,
@@ -97,7 +107,7 @@ public class BoardPanel extends JPanel {
                 new Color(181, 136, 99),
                 new Color(240, 217, 181));
 
-//        boardParam.switchBoardOrientation();
+        chessEngine.setBoardParams(boardParam);
 
         printBoard(g, boardParam);
 
@@ -106,12 +116,10 @@ public class BoardPanel extends JPanel {
                 "SansSerif",
                 new Color(227, 227, 227));
 
-        piecesArray = instantiatePieceArray(defaultFen);
-
-        printPieces(g, boardParam, piecesArray);
+        printPieces(g, boardParam, chessEngine.piecesArray);
         printTimer(g, boardParam);
 
-        printMoves(movesArray, g, boardParam);
+        printMoves(chessEngine.getMovesArray(), g, boardParam);
     }
 
     public void printBoard(Graphics g, BoardParameters boardParam){
@@ -138,7 +146,10 @@ public class BoardPanel extends JPanel {
 
                 int xPos = getXPos(boardParam, col);
                 int yPos = getYPos(boardParam, row);
-                g.fillRect(xPos,yPos,boardParam.cellSize,boardParam.cellSize);
+
+                int size =  boardParam.cellSize;
+
+                g.fillRect(xPos,yPos,size,size);
             }
         }
     }
@@ -212,50 +223,6 @@ public class BoardPanel extends JPanel {
         return coordinates;
     }
 
-
-    public Piece[][] instantiatePieceArray(String fen){
-        Piece [][] pieces = new Piece[8][8];
-
-        int row=0, col=0;
-        for(String fenRow : fen.split("/")){
-            for(String fenCol : fenRow.split("")){
-                ///checks if text is a number
-                if(fenCol.charAt(0) > '0' &&  fenCol.charAt(0) < '9'){
-                    int x = Integer.parseInt(fenCol);
-                    for(int j = 0; j < x; j++){
-                        pieces[row][col++] = null;
-                    }
-                }else {
-                    pieces[row][col] = instantiatePiece(fenCol);
-                    pieces[row][col].setPosition(col, row, boardParam.isReversed);
-                    col++;
-                }
-            }
-            col= 0;
-            row++;
-        }
-
-        return pieces;
-    }
-
-
-    public Piece instantiatePiece(String pieceCharacter){
-        char c = pieceCharacter.charAt(0);
-        boolean isWhite = Character.isUpperCase(c);
-        char lower = Character.toLowerCase(c);
-        String lowerCaseChar = String.valueOf(lower);
-
-        return switch (lowerCaseChar) {
-            case "k" -> new King(isWhite);
-            case "q" -> new Queen(isWhite);
-            case "r" -> new Rook(isWhite);
-            case "b" -> new Bishop(isWhite);
-            case "n" -> new Knight(isWhite);
-            case "p" -> new Pawn(isWhite);
-            default -> null;
-        };
-    }
-
     public void printPieces(Graphics g, BoardParameters boardParam, Piece[][] pieces){
         int pieceCount =0;
 
@@ -288,21 +255,33 @@ public class BoardPanel extends JPanel {
         return pieceCount;
     }
 
-    public void printMoves(PiecePosition[] moves, Graphics g, BoardParameters boardParam){
+    public void printMoves(Map<String, Move> moves, Graphics g, BoardParameters boardParam){
         if(moves == null){
             return;
         }
 
         System.out.println("Drawing moves ...");
 
+        g.setColor(new Color(1,0,0, 82));
 
-        g.setColor(Color.red);
-        for(PiecePosition move: moves){
-            int xPos = getXPos(boardParam, move.x);
-            int yPos = getYPos(boardParam, move.y);
+        moves.forEach((key,move)->{
+            int x = move.piecePosition.x;
+            int y = move.piecePosition.y;
 
-            g.fillRect(xPos,yPos,boardParam.cellSize,boardParam.cellSize);
-        }
+
+            int xPos = getXPos(boardParam, x);
+            int yPos = getYPos(boardParam, y);
+
+            int size = boardParam.cellSize*13/36;
+
+            xPos = xPos + (boardParam.cellSize - size) /2;
+            yPos = yPos + (boardParam.cellSize - size) /2;
+
+//            g.fillRect(xPos,yPos,boardParam.cellSize,boardParam.cellSize);
+            g.fillArc(xPos,yPos,size,size, 0, 360);
+        });
+
+
     }
 
 

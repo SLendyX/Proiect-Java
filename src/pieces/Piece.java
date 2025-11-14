@@ -11,12 +11,19 @@ public abstract class Piece  {
     String type;
     char fenChar;
     PiecePosition piecePosition;
+    boolean isAttacked = false;
 
     Piece(boolean isWhite,String pieceType) {
         this.isWhite = isWhite;
         this.image = new ImageIcon("./data/pieces/"+ (isWhite ? "white" : "black") +"/"+pieceType+".png").getImage();
         this.type = pieceType;
-        this.fenChar = isWhite ? Character.toUpperCase(pieceType.charAt(0)) : pieceType.charAt(0);
+
+        if(pieceType.equals("knight")){
+            this.fenChar = isWhite ? Character.toUpperCase(pieceType.charAt(1)) : pieceType.charAt(1);
+        }else{
+            this.fenChar = isWhite ? Character.toUpperCase(pieceType.charAt(0)) : pieceType.charAt(0);
+        }
+
     }
 
     public boolean isWhite(){
@@ -47,12 +54,30 @@ public abstract class Piece  {
         return this.piecePosition;
     }
 
-    public abstract boolean canMove(int moveX, int moveY, Piece[][] piecesArray);
+    public boolean getIsAttacked(){
+        return this.isAttacked;
+    }
 
-    //este ceva in cale returneaza fals
+    public void setIsAttacked(boolean isAttacked){
+        this.isAttacked = isAttacked;
+    }
+
+    public boolean canMove(int x, int y, Piece[][] piecesArray){
+        if(x < 0 || x>7 || y < 0 || y>7){
+            return false;
+        }
+
+        if(piecesArray[y][x] != null && piecesArray[y][x].isWhite() != isWhite){
+            piecesArray[y][x].setIsAttacked(true);
+        }
+
+        return piecesArray[y][x] == null;
+    }
 
 
     public abstract PiecePosition[] getMoves(Piece[][] piecesArray);
+
+
 
     /*
         //for loop care verifica daca exista sau nu inamici in cale
