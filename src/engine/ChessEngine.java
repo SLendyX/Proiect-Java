@@ -67,6 +67,9 @@ public class ChessEngine {
         piecesArray[pieceY][pieceX] = null;
 
         piecesArray[moveY][moveX].setPosition(moveX, moveY);
+        if(!piecesArray[moveY][moveX].hasMoved()){
+            piecesArray[moveY][moveX].setHasMoved(true);
+        }
     }
 
     public void setBoardParams(BoardParameters boardParam){
@@ -128,7 +131,6 @@ public class ChessEngine {
             default -> null;
         };
     }
-
 
 
     public String getCurrentFen(){

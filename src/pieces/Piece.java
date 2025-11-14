@@ -1,5 +1,6 @@
 package pieces;
 
+import engine.ChessEngine;
 import engine.PiecePosition;
 
 import javax.swing.*;
@@ -12,6 +13,7 @@ public abstract class Piece  {
     char fenChar;
     PiecePosition piecePosition;
     boolean isAttacked = false;
+    boolean hasMoved = false;
 
     Piece(boolean isWhite,String pieceType) {
         this.isWhite = isWhite;
@@ -25,6 +27,15 @@ public abstract class Piece  {
         }
 
     }
+
+    public boolean hasMoved(){
+        return this.hasMoved;
+    }
+
+    public void setHasMoved(boolean hasMoved){
+        this.hasMoved = hasMoved;
+    }
+
 
     public boolean isWhite(){
         return isWhite;
@@ -67,9 +78,8 @@ public abstract class Piece  {
             return false;
         }
 
-        if(piecesArray[y][x] != null && piecesArray[y][x].isWhite() != isWhite){
-            piecesArray[y][x].setIsAttacked(true);
-        }
+//        System.out.printf("Calculating move to %s.%n", new ChessEngine().getChessCoords(x,y));
+
 
         return piecesArray[y][x] == null;
     }

@@ -71,6 +71,7 @@ public class BoardPanel extends JPanel {
                 throw new OutOfPieceMatrixException("Selected square does not contain a chess piece!");
             }else{
                 chessEngine.setMovesArray(piece);
+                System.out.println(chessEngine.getMovesArray().size());
                 repaint();
             }
 
