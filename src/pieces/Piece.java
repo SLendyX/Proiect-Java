@@ -80,6 +80,10 @@ public abstract class Piece  {
         return piecesArray[y][x] == null;
     }
 
+    public void setImage(String pieceType){
+        this.image = new ImageIcon("./data/pieces/"+ (isWhite ? "white" : "black") +"/"+pieceType+".png").getImage();
+    }
+
 
     public abstract PiecePosition[] getMoves(Piece[][] piecesArray);
 }

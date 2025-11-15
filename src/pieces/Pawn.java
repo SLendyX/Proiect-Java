@@ -45,10 +45,16 @@ public class Pawn extends Piece{
     public void switchPiece(){
         Scanner sc= new Scanner(System.in);
 
-        if(canPromote()){
-            switch (sc.nextInt){
-                case 1:
-
-        }
+//        if(canPromote()){
+//            switch (sc.nextInt){
+//                case 1:
+//
+//        }
     }
+
+    /*
+     queen, knight, rook, bishop
+     */
+
+
 }
