@@ -27,7 +27,13 @@ public class ChessEngine {
 
         Map<String, Move> movesMap = new HashMap<>();
 
-        for(PiecePosition move : piece.getMoves(piecesArray)){
+        PiecePosition[] moves = piece.getMoves(piecesArray);
+        if (moves == null) {
+            this.movesArray = null;
+            return;
+        }
+
+        for(PiecePosition move : moves){
             String key = move.chessCoordinate;
             movesMap.put(key, new Move(move, piece));
         }
