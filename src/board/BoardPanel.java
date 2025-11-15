@@ -14,6 +14,8 @@ import java.util.Map;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
+import pieces.Pawn;
+
 public class BoardPanel extends JPanel {
     ChessEngine chessEngine = new ChessEngine();
     BoardParameters boardParam;
@@ -74,6 +76,9 @@ public class BoardPanel extends JPanel {
                 System.out.printf("Moved %s to %s.%n", chessEngine.getMove(x,y).getMoveAuthor().getType(), chessEngine.getChessCoords(x,y));
                 chessEngine.swapSquares(chessEngine.getMove(x, y));
                 chessEngine.setMovesArray(null);
+                if(chessEngine.piecesArray[y][x].getType().equals("pawn")){
+                   chessEngine.piecesArray[y][x].switchPiece(chessEngine.piecesArray);
+                }
                 repaint();
             }else if(chessEngine.piecesArray[y][x] == null){
                 throw new OutOfPieceMatrixException("Selected square does not contain a chess piece!");
