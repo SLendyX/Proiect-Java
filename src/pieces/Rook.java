@@ -7,12 +7,7 @@ public class Rook extends Piece {
         super(isWhite, "rook");
     }
 
-    //TODO: pice move logic
-    @Override
-    public boolean canMove(int x, int y, Piece[][] piecesArray){
-        return true;
-    }
-
+    //TODO: de creat logica pentru miscare
     @Override
     public PiecePosition[] getMoves(Piece[][] piecesArray){
 

@@ -21,6 +21,13 @@ public class BoardPanel extends JPanel {
 
     public BoardPanel(){
         boardParam = new BoardParameters();
+
+        boardParam.setBoardColors(
+                new Color(223, 222, 222),
+                new Color(181, 136, 99),
+                new Color(240, 217, 181)
+        );
+
         chessEngine.setBoardParams(boardParam);
         chessEngine.instantiatePieceArray();
 
@@ -93,21 +100,22 @@ public class BoardPanel extends JPanel {
     }
 
     public void printGame(Graphics g){
-//        boardParam.switchBoardOrientation();
+
         int boardSize = min(getWidth(), getHeight());
-        int startX = getWidth() - boardSize - 223 > 200 ? (getWidth() - boardSize)/2 : getWidth() - boardSize - 223;
+        int startX = (getWidth()-boardSize)/2;
         int startY = (getHeight() - boardSize) / 2;
         int margin = boardSize*7/100;
         int cellSize = (boardSize-margin)/8;
 
-        this.boardParam = new BoardParameters(startX,
+        this.boardParam.setBoardSizes(
+                startX,
                 startY,
                 boardSize,
                 cellSize,
-                margin,
-                new Color(223, 222, 222),
-                new Color(181, 136, 99),
-                new Color(240, 217, 181));
+                margin
+        );
+
+//        boardParam.switchBoardOrientation();
 
         chessEngine.setBoardParams(boardParam);
 
@@ -116,7 +124,8 @@ public class BoardPanel extends JPanel {
         printCoordinates(g,
                 boardParam,
                 "SansSerif",
-                new Color(227, 227, 227));
+                new Color(227, 227, 227)
+        );
 
         printPieces(g, boardParam, chessEngine.piecesArray);
         printTimer(g, boardParam);

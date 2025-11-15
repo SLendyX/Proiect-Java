@@ -25,7 +25,6 @@ public abstract class Piece  {
         }else{
             this.fenChar = isWhite ? Character.toUpperCase(pieceType.charAt(0)) : pieceType.charAt(0);
         }
-
     }
 
     public boolean hasMoved(){
@@ -78,27 +77,9 @@ public abstract class Piece  {
             return false;
         }
 
-//        System.out.printf("Calculating move to %s.%n", new ChessEngine().getChessCoords(x,y));
-
-
         return piecesArray[y][x] == null;
     }
 
 
     public abstract PiecePosition[] getMoves(Piece[][] piecesArray);
-
-
-
-    /*
-        //for loop care verifica daca exista sau nu inamici in cale
-        Stack<PiecePosition> stack = new Stack<>();
-
-        for(...){
-            //logica if pentru verificare patrate
-            stack.push(new PiecePosition(x,y));
-        }
-        stack.toArray();
-    * */
-
-
 }

@@ -19,6 +19,20 @@ public class BoardParameters {
         this.isReversed = false;
     }
 
+    public void setBoardColors(Color backgroundColor, Color darkSquare, Color lightSquare) {
+        this.backgroundColor = backgroundColor;
+        this.darkSquare = darkSquare;
+        this.lightSquare = lightSquare;
+    }
+
+    public void setBoardSizes(int startX, int startY, int boardSize, int cellSize, int margin){
+        this.startX = startX;
+        this.startY = startY;
+        this.boardSize = boardSize;
+        this.cellSize = cellSize;
+        this.margin = margin;
+    }
+
     public BoardParameters(int startX, int startY, int boardSize, int cellSize, int margin, Color backgroundColor, Color darkSquare, Color lightSquare) {
         this.startX = startX;
         this.startY = startY;
