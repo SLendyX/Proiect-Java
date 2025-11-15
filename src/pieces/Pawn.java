@@ -1,4 +1,5 @@
 package pieces;
+import java.util.Scanner;
 
 import engine.PiecePosition;
 
@@ -33,4 +34,21 @@ public class Pawn extends Piece{
         return currentMoves.toArray(new PiecePosition[0]);
     }
 
+    public boolean canPromote(){
+        if(isWhite && (getPostion().y == 0)){
+            return true;
+        }
+
+        return !isWhite && (getPostion().y == 7);
+    }
+
+    public void switchPiece(){
+        Scanner sc= new Scanner(System.in);
+
+        if(canPromote()){
+            switch (sc.nextInt){
+                case 1:
+
+        }
+    }
 }
