@@ -34,45 +34,4 @@ public class Pawn extends Piece{
         return currentMoves.toArray(new PiecePosition[0]);
     }
 
-    public boolean canPromote(){
-        if(isWhite && (getPostion().y == 0)){
-            return true;
-        }
-
-        return !isWhite && (getPostion().y == 7);
-    }
-
-    public void switchPiece(Piece[][] piecesArray){
-        Scanner sc= new Scanner(System.in);
-
-        if(canPromote()){
-            int posY = getPostion().y;
-            int posX = getPostion().x;
-            switch (sc.nextInt()) {
-                case 1:
-                    piecesArray[posY][posX] = new Queen(isWhite);
-                    piecesArray[posY][posX].setPosition(posX,posY);
-                    break;
-                case 2:
-                    piecesArray[posY][posX] = new Knight(isWhite);
-                    piecesArray[posY][posX].setPosition(posX,posY);
-                    break;
-                case 3:
-                    piecesArray[posY][posX] = new Rook(isWhite);
-                    piecesArray[posY][posX].setPosition(posX,posY);
-                    break;
-                case 4:
-                    piecesArray[posY][posX] = new Bishop(isWhite);
-                    piecesArray[posY][posX].setPosition(posX,posY);
-                    break;
-                default:
-                    break;
-            }
-
-        }
-    }
-
-    /*
-     queen, knight, rook, bishop
-     */
 }

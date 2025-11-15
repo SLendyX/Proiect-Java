@@ -1,8 +1,10 @@
 package board;
 
+import com.sun.tools.javac.Main;
 import engine.ChessEngine;
 import engine.Move;
 import engine.OutOfPieceMatrixException;
+import engine.PiecePosition;
 import pieces.Piece;
 
 import javax.swing.*;
@@ -14,17 +16,13 @@ import java.util.Map;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
-
 public class BoardPanel extends JPanel {
     ChessEngine chessEngine = new ChessEngine();
     BoardParameters boardParam;
     private static final double MOVE_INDICATOR_SIZE_RATIO = 13.0/36.0;
-    PromotionPanel promotionPanel;
 
-    public BoardPanel(){
+    public BoardPanel() {
         boardParam = new BoardParameters();
-        promotionPanel = new PromotionPanel(chessEngine);
-
 
         boardParam.setBoardColors(
                 new Color(223, 222, 222),
@@ -76,27 +74,35 @@ public class BoardPanel extends JPanel {
 
             if(chessEngine.doesMoveExist(x, y) && chessEngine.piecesArray[y][x] == null){
                 System.out.printf("Moved %s to %s.%n", chessEngine.getMove(x,y).getMoveAuthor().getType(), chessEngine.getChessCoords(x,y));
-                chessEngine.swapSquares(chessEngine.getMove(x, y));
-                chessEngine.setMovesArray(null);
-                if(chessEngine.piecesArray[y][x].getType().equals("pawn")){
-                         promotionPanel.setPawn(chessEngine.piecesArray[y][x]);
-                         add(promotionPanel);
-                         chessEngine.piecesArray[y][x].switchPiece(chessEngine.piecesArray);
+
+                piece = chessEngine.getMove(x,y).getMoveAuthor();
+                if(piece.getType().equals("pawn") && chessEngine.canPromote(piece)) {
+                    chessEngine.setIsPromoting(true);
+                    chessEngine.setPromotingPawn(piece);
+                }else{
+                    chessEngine.swapSquares(chessEngine.getMove(x, y));
                 }
+                chessEngine.setMovesArray(null);
                 repaint();
             }else if(chessEngine.piecesArray[y][x] == null){
                 throw new OutOfPieceMatrixException("Selected square does not contain a chess piece!");
             }else{
                 chessEngine.setMovesArray(piece);
+                if(chessEngine.getIsPromoting()){
+                    chessEngine.setIsPromoting(false);
+                    chessEngine.setPromotingPawn(null);
+                    removeAll();
+                }
                 System.out.println(chessEngine.getMovesArray().size());
                 repaint();
             }
-
-//            PiecePosition pos = piece.getPostion();
-//            System.out.printf("Clicked on: x:%d  y:%d  chess_coordinates: %s%nPiece is at: x:%d  y:%d  chess_coordinates: %s%n", x, y, chessEngine.getChessCoords(x, y, boardParam.isReversed), pos.x, pos.y, pos.chessCoordinate);
-
         } catch (OutOfBoardException | OutOfPieceMatrixException ex) {
             chessEngine.setMovesArray(null);
+            if(chessEngine.getIsPromoting()){
+                chessEngine.setIsPromoting(false);
+                chessEngine.setPromotingPawn(null);
+                removeAll();
+            }
             repaint();
             System.err.println(ex.getMessage());
         }
@@ -140,6 +146,8 @@ public class BoardPanel extends JPanel {
         printTimer(g, boardParam);
 
         printMoves(chessEngine.getMovesArray(), g, boardParam);
+
+        printPromotionPanel(g, boardParam, chessEngine.getIsPromoting(), chessEngine.getPromotingPawn());
     }
 
     public void printBoard(Graphics g, BoardParameters boardParam){
@@ -300,10 +308,52 @@ public class BoardPanel extends JPanel {
 //            g.fillRect(xPos,yPos,boardParam.cellSize,boardParam.cellSize);
             g.fillArc(xPos,yPos,size,size, 0, 360);
         });
-
-
     }
+    public void printPromotionPanel(Graphics g, BoardParameters boardParam, boolean isVisible, Piece pawn) {
+        if(!isVisible || pawn == null){
+            return ;
+        }
 
+//        ImageIcon icon = new ImageIcon("data/pieces/white/rook.png");
+//        JButton rookButton = new JButton(icon);
+//
+//        rookButton.setSize();
+//
+//        rookButton.addActionListener(e -> {
+//            System.out.println("Rook selected!");
+//        });
+
+        int cellSize = boardParam.cellSize;
+        ImageIcon[] images = {
+                new ImageIcon("data/pieces/white/queen.png"),
+                new ImageIcon("data/pieces/white/rook.png"),
+                new ImageIcon("data/pieces/white/bishop.png"),
+                new ImageIcon("data/pieces/white/knight.png"),
+        };
+        int posX = pawn.getPostion().x;
+        int posY = pawn.getPostion().y;
+        int startX = boardParam.startX;
+        int startY = boardParam.startY;
+        int margin = boardParam.margin;
+
+//        g.setColor(new Color(73,54,87));
+        for (int i = 0; i <= 3; i++) {
+            JButton button = new JButton(new ImageIcon(images[i].getImage().getScaledInstance(cellSize/2, cellSize/2, Image.SCALE_SMOOTH)));
+            button.setSize(cellSize/2, cellSize/2);
+            button.setLocation((startX + posX*cellSize + margin/2) - cellSize / 2, (startY + (posY-1)*cellSize+margin/2) + cellSize / 2 * i);
+
+            int finalI = i;
+            button.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    chessEngine.switchPiece(pawn, finalI);
+                    removeAll();
+                    repaint();
+                }
+            });
+            add(button);
+        }
+    }
 
     public void printTimer(Graphics g, BoardParameters boardParam){
         int cellSize = boardParam.cellSize;
@@ -324,6 +374,7 @@ public class BoardPanel extends JPanel {
         g.drawString(timpPlayer2, xtimpPlayer2, ytimpPlayer2);
 
     }
+
 
 
 }

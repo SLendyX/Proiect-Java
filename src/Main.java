@@ -25,4 +25,5 @@ public class Main {
 
         frame.add(board);
     }
+
 }

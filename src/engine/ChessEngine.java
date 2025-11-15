@@ -5,11 +5,14 @@ import pieces.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Scanner;
 
 public class ChessEngine {
     //    String defaultFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
     BoardParameters boardParam;
     String defaultFen = "8/8/8/4k3/3nQ2/8/PPPPPPPP/RNBQKBNR";
+    boolean isPromoting = false;
+    Piece promotingPawn;
 
     public Piece[][] piecesArray;
     private Map<String, Move> movesArray;
@@ -191,6 +194,64 @@ public class ChessEngine {
                 rows.charAt(y);
     }
 
+    public boolean canPromote(Piece pawn){
+        int posY = pawn.getPostion().y;
+        boolean isWhite = pawn.isWhite();
 
+        if(isWhite && (posY == 1)){
+            return true;
+        }
+
+        return !isWhite && (posY == 6);
+    }
+
+    public void switchPiece(Piece pawn, int choice) {
+        if (canPromote(pawn)) {
+            int posY = pawn.getPostion().y;
+            int posX = pawn.getPostion().x;
+            boolean isWhite = pawn.isWhite();
+
+
+
+
+            switch (choice) {
+                case 0:
+                    piecesArray[posY][posX] = new Queen(isWhite);
+                    piecesArray[posY][posX].setPosition(posX, posY);
+                    break;
+                case 3:
+                    piecesArray[posY][posX] = new Knight(isWhite);
+                    piecesArray[posY][posX].setPosition(posX, posY);
+                    break;
+                case 1:
+                    piecesArray[posY][posX] = new Rook(isWhite);
+                    piecesArray[posY][posX].setPosition(posX, posY);
+                    break;
+                case 2:
+                    piecesArray[posY][posX] = new Bishop(isWhite);
+                    piecesArray[posY][posX].setPosition(posX, posY);
+                    break;
+                default:
+                    break;
+            }
+
+        }
+    }
+
+    public void setIsPromoting(boolean isPromoting){
+        this.isPromoting = isPromoting;
+    }
+
+    public boolean getIsPromoting(){
+        return this.isPromoting;
+    }
+
+    public void setPromotingPawn(Piece pawn){
+        this.promotingPawn = pawn;
+    }
+
+    public Piece getPromotingPawn(){
+        return this.promotingPawn;
+    }
 
 }

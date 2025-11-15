@@ -86,7 +86,4 @@ public abstract class Piece  {
 
 
     public abstract PiecePosition[] getMoves(Piece[][] piecesArray);
-
-    public void switchPiece(Piece[][] piecesArray) {
-    }
 }
