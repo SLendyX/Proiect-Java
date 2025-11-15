@@ -22,10 +22,10 @@ public class Queen extends Piece{
 
         for(int incrementX:incrementsX){
             for(int incrementY:incrementsY){
+                if (incrementX == 0 && incrementY == 0) {
+                    continue;
+                }
                 for(int i = 1; i < 8; i++) {
-                    if (incrementX == 0 && incrementY == 0) {
-                        continue;
-                    }
                     if (canMove(x + incrementX * i, y + incrementY * i, piecesArray)) {
                         currentMoves.add(new PiecePosition(x + incrementX * i, y + incrementY * i));
                     } else {
