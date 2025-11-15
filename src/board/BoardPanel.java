@@ -14,15 +14,17 @@ import java.util.Map;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
-import pieces.Pawn;
 
 public class BoardPanel extends JPanel {
     ChessEngine chessEngine = new ChessEngine();
     BoardParameters boardParam;
     private static final double MOVE_INDICATOR_SIZE_RATIO = 13.0/36.0;
+    PromotionPanel promotionPanel;
 
     public BoardPanel(){
         boardParam = new BoardParameters();
+        promotionPanel = new PromotionPanel(chessEngine);
+
 
         boardParam.setBoardColors(
                 new Color(223, 222, 222),
@@ -77,7 +79,9 @@ public class BoardPanel extends JPanel {
                 chessEngine.swapSquares(chessEngine.getMove(x, y));
                 chessEngine.setMovesArray(null);
                 if(chessEngine.piecesArray[y][x].getType().equals("pawn")){
-                   chessEngine.piecesArray[y][x].switchPiece(chessEngine.piecesArray);
+                         promotionPanel.setPawn(chessEngine.piecesArray[y][x]);
+                         add(promotionPanel);
+                         chessEngine.piecesArray[y][x].switchPiece(chessEngine.piecesArray);
                 }
                 repaint();
             }else if(chessEngine.piecesArray[y][x] == null){
@@ -320,6 +324,7 @@ public class BoardPanel extends JPanel {
         g.drawString(timpPlayer2, xtimpPlayer2, ytimpPlayer2);
 
     }
+
 
 }
 
