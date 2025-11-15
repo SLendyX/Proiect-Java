@@ -10,17 +10,11 @@ public class Knight extends Piece {
         super(isWhite, "knight");
     }
 
-    //TODO: de creat logica pentru miscare
     @Override
-    public boolean canMove(int x, int y, Piece[][] piecesArray){
-        if(x>=0 && x<8  && y>=0 && y<8){
-            return piecesArray[x][y] == null;
-        }
-        return false;
-    }
+    public PiecePosition[] getMoves(Piece[][] piecesArray){
+        int x = getPostion().x;
+        int y = getPostion().y;
 
-    @Override
-    public PiecePosition[] getMoves(int x, int y, Piece[][] piecesArray){
         List<PiecePosition> moves = new ArrayList<>();
         int[][] offsets = {
                 {2,1},{2,-1},{-2,1},{-2,-1},
@@ -31,7 +25,6 @@ public class Knight extends Piece {
             int newY = y + offset[1];
 
             if (canMove(newX, newY, piecesArray)) {
-                //adaugam pozitia disponibila in lista
                 moves.add(new PiecePosition(newX, newY));
             }
         }

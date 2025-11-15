@@ -14,6 +14,11 @@ public class BoardParameters {
 
     public boolean isReversed = false;
 
+
+    public BoardParameters() {
+        this.isReversed = false;
+    }
+
     public BoardParameters(int startX, int startY, int boardSize, int cellSize, int margin, Color backgroundColor, Color darkSquare, Color lightSquare) {
         this.startX = startX;
         this.startY = startY;
