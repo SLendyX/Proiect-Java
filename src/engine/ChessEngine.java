@@ -63,13 +63,13 @@ public class ChessEngine {
     }
 
     public void swapSquares(Move move){
-        int moveX = move.piecePosition.x;
-        int moveY = move.piecePosition.y;
+        int moveX = move.getPiecePosition().x;
+        int moveY = move.getPiecePosition().y;
 
-        int pieceX = move.moveAuthor.getPostion().x;
-        int pieceY = move.moveAuthor.getPostion().y;
+        int pieceX = move.getMoveAuthor().getPostion().x;
+        int pieceY = move.getMoveAuthor().getPostion().y;
 
-        piecesArray[moveY][moveX] = move.moveAuthor;
+        piecesArray[moveY][moveX] = move.getMoveAuthor();
         piecesArray[pieceY][pieceX] = null;
 
         piecesArray[moveY][moveX].setPosition(moveX, moveY);

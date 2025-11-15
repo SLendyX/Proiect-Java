@@ -17,6 +17,7 @@ import static java.lang.Math.min;
 public class BoardPanel extends JPanel {
     ChessEngine chessEngine = new ChessEngine();
     BoardParameters boardParam;
+    private static final double MOVE_INDICATOR_SIZE_RATIO = 13.0/36.0;
 
     public BoardPanel(){
         boardParam = new BoardParameters();
@@ -63,7 +64,7 @@ public class BoardPanel extends JPanel {
             Piece piece =  chessEngine.piecesArray[y][x];
 
             if(chessEngine.doesMoveExist(x, y) && chessEngine.piecesArray[y][x] == null){
-                System.out.printf("Moved %s to %s.%n", chessEngine.getMove(x,y).moveAuthor.getType(), chessEngine.getChessCoords(x,y));
+                System.out.printf("Moved %s to %s.%n", chessEngine.getMove(x,y).getMoveAuthor().getType(), chessEngine.getChessCoords(x,y));
                 chessEngine.swapSquares(chessEngine.getMove(x, y));
                 chessEngine.setMovesArray(null);
                 repaint();
@@ -266,14 +267,14 @@ public class BoardPanel extends JPanel {
         g.setColor(new Color(1,0,0, 82));
 
         moves.forEach((key,move)->{
-            int x = move.piecePosition.x;
-            int y = move.piecePosition.y;
+            int x = move.getPiecePosition().x;
+            int y = move.getPiecePosition().y;
 
 
             int xPos = getXPos(boardParam, x);
             int yPos = getYPos(boardParam, y);
 
-            int size = boardParam.cellSize*13/36;
+            int size = (int)(boardParam.cellSize*MOVE_INDICATOR_SIZE_RATIO);
 
             xPos = xPos + (boardParam.cellSize - size) /2;
             yPos = yPos + (boardParam.cellSize - size) /2;
