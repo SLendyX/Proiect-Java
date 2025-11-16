@@ -12,7 +12,7 @@ public class BoardParameters {
 
     public Color backgroundColor, darkSquare, lightSquare;
 
-    public boolean isReversed = false;
+    public boolean isReversed;
 
 
     public BoardParameters() {

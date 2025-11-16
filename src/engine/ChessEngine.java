@@ -9,7 +9,7 @@ import java.util.Map;
 public class ChessEngine {
     //    String defaultFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
     BoardParameters boardParam;
-    String defaultFen = "rnbqkbnr/1ppppppp/8/8/8/8/P1PPPPPP/RNBQKBNR";
+    String defaultFen = "1nbqkbnr/1ppppppp/8/8/8/8/P1PPPPPP/R1BQKBNR";
     boolean isPromoting = false;
     boolean turn = true;
     Piece promotingPawn;

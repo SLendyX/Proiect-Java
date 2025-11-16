@@ -22,6 +22,7 @@ public class BoardPanel extends JPanel {
 
     public BoardPanel() {
         boardParam = new BoardParameters();
+        boardParam.switchBoardOrientation();
 
         boardParam.setBoardColors(
                 new Color(223, 222, 222),
@@ -65,27 +66,31 @@ public class BoardPanel extends JPanel {
             int x = (e.getX() - startX - margin/2)/cellSize;
             int y = (e.getY() - margin/2)/cellSize;
 
+            System.out.printf("x: %d, y: %d%n", x, y);
+
             if(x < 0 || x > 7 || y < 0 || y > 7){
                 throw new OutOfBoardException("Clicked outside the board!");
             }
 
-            Piece piece =  chessEngine.piecesArray[y][x];
+            int realY = boardParam.isReversed ? 7-y : y;
+
+            Piece piece = chessEngine.piecesArray[realY][x];
 
 
-            if(chessEngine.doesMoveExist(x, y) && chessEngine.piecesArray[y][x] == null){
-                System.out.printf("Moved %s to %s.%n", chessEngine.getMove(x,y).getMoveAuthor().getType(), chessEngine.getChessCoords(x,y));
+            if(chessEngine.doesMoveExist(x,realY) && chessEngine.piecesArray[realY][x] == null){
+                System.out.printf("Moved %s to %s.%n", chessEngine.getMove(x,realY).getMoveAuthor().getType(), chessEngine.getChessCoords(x,realY));
 
-                piece = chessEngine.getMove(x,y).getMoveAuthor();
+                piece = chessEngine.getMove(x,realY).getMoveAuthor();
                 if(piece.getType().equals("pawn") && chessEngine.canPromote(piece)) {
                     chessEngine.setIsPromoting(true);
                     chessEngine.setPromotingPawn(piece);
                 }else{
-                    chessEngine.swapSquares(chessEngine.getMove(x, y));
+                    chessEngine.swapSquares(chessEngine.getMove(x,realY));
                     chessEngine.switchTurn();
                 }
                 chessEngine.setMovesArray(null);
                 repaint();
-            }else if(chessEngine.piecesArray[y][x] == null){
+            }else if(chessEngine.piecesArray[realY][x] == null){
                 throw new OutOfPieceMatrixException("Selected square does not contain a chess piece!");
             }else if(chessEngine.getTurn() == piece.isWhite()){
                 chessEngine.setMovesArray(piece);
@@ -130,8 +135,6 @@ public class BoardPanel extends JPanel {
                 cellSize,
                 margin
         );
-
-//        boardParam.switchBoardOrientation();
 
         chessEngine.setBoardParams(boardParam);
 
@@ -295,7 +298,7 @@ public class BoardPanel extends JPanel {
 
         moves.forEach((key,move)->{
             int x = move.getPiecePosition().x;
-            int y = move.getPiecePosition().y;
+            int y = boardParam.isReversed ? 7-move.getPiecePosition().y : move.getPiecePosition().y;
 
 
             int xPos = getXPos(boardParam, x);
@@ -328,6 +331,7 @@ public class BoardPanel extends JPanel {
 
         int posX = pawn.getPostion().x;
         int posY = pawn.getPostion().y;
+        int boardPosY = boardParam.isReversed ? 7 - pawn.getPostion().y : pawn.getPostion().y;
         int startX = boardParam.startX;
         int startY = boardParam.startY;
         int margin = boardParam.margin;
@@ -336,7 +340,7 @@ public class BoardPanel extends JPanel {
         for (int i = 0; i <= 3; i++) {
             JButton button = new JButton(new ImageIcon(images[i].getImage().getScaledInstance(cellSize/2, cellSize/2, Image.SCALE_SMOOTH)));
             button.setSize(cellSize/2, cellSize/2);
-            button.setLocation((startX + posX*cellSize + margin/2) - cellSize / 2, (startY + (posY-1)*cellSize+margin/2) + cellSize / 2 * i);
+            button.setLocation((startX + posX*cellSize + margin/2) - cellSize / 2, (startY + (boardPosY-1)*cellSize+margin/2) + cellSize / 2 * i);
 
             int finalI = i;
             button.addMouseListener(new MouseAdapter() {
