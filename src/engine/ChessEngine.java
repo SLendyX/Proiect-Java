@@ -10,7 +10,7 @@ import java.util.Scanner;
 public class ChessEngine {
     //    String defaultFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
     BoardParameters boardParam;
-    String defaultFen = "8/8/8/4k3/3nQ2/8/PPPPPPPP/RNBQKBNR";
+    String defaultFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
     boolean isPromoting = false;
     Piece promotingPawn;
 

@@ -311,25 +311,20 @@ public class BoardPanel extends JPanel {
     }
     public void printPromotionPanel(Graphics g, BoardParameters boardParam, boolean isVisible, Piece pawn) {
         if(!isVisible || pawn == null){
+            System.out.println("Deleting panel");
             return ;
         }
 
-//        ImageIcon icon = new ImageIcon("data/pieces/white/rook.png");
-//        JButton rookButton = new JButton(icon);
-//
-//        rookButton.setSize();
-//
-//        rookButton.addActionListener(e -> {
-//            System.out.println("Rook selected!");
-//        });
-
         int cellSize = boardParam.cellSize;
-        ImageIcon[] images = {
-                new ImageIcon("data/pieces/white/queen.png"),
-                new ImageIcon("data/pieces/white/rook.png"),
-                new ImageIcon("data/pieces/white/bishop.png"),
-                new ImageIcon("data/pieces/white/knight.png"),
-        };
+
+        String[] pieces = {"queen", "rook", "bishop", "knight"};
+
+        ImageIcon[] images = new ImageIcon[pieces.length];
+
+        for(int i=0;i<images.length;i++){
+            images[i] = new ImageIcon("data/pieces/"+ (pawn.isWhite() ? "white" : "black") +"/"+ pieces[i] +".png");
+        }
+
         int posX = pawn.getPostion().x;
         int posY = pawn.getPostion().y;
         int startX = boardParam.startX;
@@ -346,7 +341,11 @@ public class BoardPanel extends JPanel {
             button.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
-                    chessEngine.switchPiece(pawn, finalI);
+                    chessEngine.switchPiece(chessEngine.piecesArray[posY][posX], finalI);
+                    chessEngine.swapSquares(new Move(new PiecePosition(posX, chessEngine.piecesArray[posY][posX].isWhite() ? 0 : 7), chessEngine.piecesArray[posY][posX]));
+                    chessEngine.setIsPromoting(false);
+                    chessEngine.setPromotingPawn(null);
+
                     removeAll();
                     repaint();
                 }

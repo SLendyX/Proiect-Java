@@ -11,7 +11,6 @@ public class Bishop extends Piece {
         super(isWhite, "bishop");
     }
 
-    //TODO: de creat logica pentru miscare
     @Override
     public PiecePosition[] getMoves(Piece[][] piecesArray){
         List<PiecePosition> currentMoves = new ArrayList<>();

@@ -10,7 +10,6 @@ public class Rook extends Piece {
         super(isWhite, "rook");
     }
 
-    //TODO: de creat logica pentru miscare
     @Override
     public PiecePosition[] getMoves(Piece[][] piecesArray){
 
