@@ -5,14 +5,16 @@ import pieces.*;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Scanner;
 
 public class ChessEngine {
     //    String defaultFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
     BoardParameters boardParam;
-    String defaultFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+    String defaultFen = "rnbqkbnr/1ppppppp/8/8/8/8/P1PPPPPP/RNBQKBNR";
     boolean isPromoting = false;
+    boolean turn = true;
     Piece promotingPawn;
+
+
 
     public Piece[][] piecesArray;
     private Map<String, Move> movesArray;
@@ -155,14 +157,14 @@ public class ChessEngine {
                 }
                 else{
                     if(emptySpace > 0){
-                        fen.append(Integer.toString(emptySpace));
+                        fen.append(emptySpace);
                         emptySpace = 0;
                     }
                     fen.append(p.getFenChar());
                 }
             }
             if(emptySpace > 0)
-                fen.append(Integer.toString(emptySpace));
+                fen.append(emptySpace);
 
             if(i++ < 7)
                 fen.append("/");
@@ -252,6 +254,14 @@ public class ChessEngine {
 
     public Piece getPromotingPawn(){
         return this.promotingPawn;
+    }
+
+    public boolean getTurn(){
+        return this.turn;
+    }
+
+    public void switchTurn(){
+        this.turn = !this.turn;
     }
 
 }

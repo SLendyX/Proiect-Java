@@ -1,6 +1,5 @@
 package board;
 
-import com.sun.tools.javac.Main;
 import engine.ChessEngine;
 import engine.Move;
 import engine.OutOfPieceMatrixException;
@@ -72,6 +71,7 @@ public class BoardPanel extends JPanel {
 
             Piece piece =  chessEngine.piecesArray[y][x];
 
+
             if(chessEngine.doesMoveExist(x, y) && chessEngine.piecesArray[y][x] == null){
                 System.out.printf("Moved %s to %s.%n", chessEngine.getMove(x,y).getMoveAuthor().getType(), chessEngine.getChessCoords(x,y));
 
@@ -81,12 +81,13 @@ public class BoardPanel extends JPanel {
                     chessEngine.setPromotingPawn(piece);
                 }else{
                     chessEngine.swapSquares(chessEngine.getMove(x, y));
+                    chessEngine.switchTurn();
                 }
                 chessEngine.setMovesArray(null);
                 repaint();
             }else if(chessEngine.piecesArray[y][x] == null){
                 throw new OutOfPieceMatrixException("Selected square does not contain a chess piece!");
-            }else{
+            }else if(chessEngine.getTurn() == piece.isWhite()){
                 chessEngine.setMovesArray(piece);
                 if(chessEngine.getIsPromoting()){
                     chessEngine.setIsPromoting(false);
@@ -147,7 +148,7 @@ public class BoardPanel extends JPanel {
 
         printMoves(chessEngine.getMovesArray(), g, boardParam);
 
-        printPromotionPanel(g, boardParam, chessEngine.getIsPromoting(), chessEngine.getPromotingPawn());
+        printPromotionPanel(boardParam, chessEngine.getIsPromoting(), chessEngine.getPromotingPawn());
     }
 
     public void printBoard(Graphics g, BoardParameters boardParam){
@@ -192,9 +193,9 @@ public class BoardPanel extends JPanel {
 
     public void printCoordinates(Graphics g, BoardParameters boardParam, String fontFamily, Color color){
         //setari font
-        /**
-         * marimea fontului este un procent din marimea unui patrat de joc
-        **/
+        /*
+          marimea fontului este un procent din marimea unui patrat de joc
+        */
         int fontSize = max(10, boardParam.cellSize/5);
         Font font = new Font(fontFamily, Font.BOLD, fontSize);
         g.setFont(font);
@@ -214,9 +215,9 @@ public class BoardPanel extends JPanel {
         }
 
         for(int cell=0;cell<8;cell++){
-            /**
-             * Calculam pozitia coordonatelor
-             * */
+            /*
+              Calculam pozitia coordonatelor
+              */
             int[] coordinatesColumns = getCoordinatesPos(boardParam, cell, fm, true);
             int[] coordinatesRows = getCoordinatesPos(boardParam, cell, fm, false);
 
@@ -309,7 +310,7 @@ public class BoardPanel extends JPanel {
             g.fillArc(xPos,yPos,size,size, 0, 360);
         });
     }
-    public void printPromotionPanel(Graphics g, BoardParameters boardParam, boolean isVisible, Piece pawn) {
+    public void printPromotionPanel(BoardParameters boardParam, boolean isVisible, Piece pawn) {
         if(!isVisible || pawn == null){
             System.out.println("Deleting panel");
             return ;
@@ -345,6 +346,7 @@ public class BoardPanel extends JPanel {
                     chessEngine.swapSquares(new Move(new PiecePosition(posX, chessEngine.piecesArray[posY][posX].isWhite() ? 0 : 7), chessEngine.piecesArray[posY][posX]));
                     chessEngine.setIsPromoting(false);
                     chessEngine.setPromotingPawn(null);
+                    chessEngine.switchTurn();
 
                     removeAll();
                     repaint();
