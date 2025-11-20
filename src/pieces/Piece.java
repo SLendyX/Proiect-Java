@@ -1,6 +1,7 @@
 package pieces;
 
 import engine.ChessEngine;
+import engine.Move;
 import engine.PiecePosition;
 
 import javax.swing.*;
@@ -80,10 +81,19 @@ public abstract class Piece  {
         return piecesArray[y][x] == null;
     }
 
+    public boolean canCapture(int x, int y, Piece[][] piecesArray){
+        if(x < 0 || x>7 || y < 0 || y>7){
+            return false;
+        }
+
+        return piecesArray[y][x] != null && isWhite != piecesArray[y][x].isWhite();
+    }
+
     public void setImage(String pieceType){
         this.image = new ImageIcon("./data/pieces/"+ (isWhite ? "white" : "black") +"/"+pieceType+".png").getImage();
     }
 
 
-    public abstract PiecePosition[] getMoves(Piece[][] piecesArray);
+
+    public abstract Move[] getMoves(Piece[][] piecesArray);
 }

@@ -1,5 +1,6 @@
 package pieces;
 
+import engine.Move;
 import engine.PiecePosition;
 
 import java.util.ArrayList;
@@ -11,9 +12,9 @@ public class Rook extends Piece {
     }
 
     @Override
-    public PiecePosition[] getMoves(Piece[][] piecesArray){
+    public Move[] getMoves(Piece[][] piecesArray){
 
-        List<PiecePosition> currentMoves = new ArrayList<>();
+        List<Move> currentMoves = new ArrayList<>();
 
         int x = getPostion().x;
         int y = getPostion().y;
@@ -25,9 +26,15 @@ public class Rook extends Piece {
             for(int incrementY:incrementsY){
                 if((incrementX == 0 || incrementY == 0) && incrementX != incrementY)
                     for(int i = 1; i < 8; i++) {
-                        if (canMove(x + incrementX * i, y + incrementY * i, piecesArray) ) {
-                            currentMoves.add(new PiecePosition(x + incrementX * i, y + incrementY * i));
+                        int newX = x + incrementX * i;
+                        int newY = y + incrementY * i;
+
+                        if (canMove(newX, newY, piecesArray) ) {
+                            currentMoves.add(new Move(newX, newY, this));
                         } else {
+                            if(canCapture(newX, newY, piecesArray)) {
+                                currentMoves.add(new Move(newX, newY, this, true));
+                            }
                             break;
                         }
                     }
@@ -35,6 +42,6 @@ public class Rook extends Piece {
         }
 
 
-        return currentMoves.toArray(new PiecePosition[0]);
+        return currentMoves.toArray(new Move[0]);
     }
 }

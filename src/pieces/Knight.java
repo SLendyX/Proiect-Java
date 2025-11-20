@@ -1,5 +1,6 @@
 package pieces;
 
+import engine.Move;
 import engine.PiecePosition;
 
 import java.util.ArrayList;
@@ -11,11 +12,11 @@ public class Knight extends Piece {
     }
 
     @Override
-    public PiecePosition[] getMoves(Piece[][] piecesArray){
+    public Move[] getMoves(Piece[][] piecesArray){
         int x = getPostion().x;
         int y = getPostion().y;
 
-        List<PiecePosition> moves = new ArrayList<>();
+        List<Move> moves = new ArrayList<>();
         int[][] offsets = {
                 {2,1},{2,-1},{-2,1},{-2,-1},
                 {1,-2},{-1,-2},{-1,2},{1,2}
@@ -25,10 +26,12 @@ public class Knight extends Piece {
             int newY = y + offset[1];
 
             if (canMove(newX, newY, piecesArray)) {
-                moves.add(new PiecePosition(newX, newY));
+                moves.add(new Move(newX, newY, this));
+            }else if(canCapture(newX, newY, piecesArray)) {
+                moves.add(new Move(newX, newY, this, true));
             }
         }
 
-        return moves.toArray(new PiecePosition[0]);
+        return moves.toArray(new Move[0]);
     }
 }

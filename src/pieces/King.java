@@ -1,5 +1,6 @@
 package pieces;
 
+import engine.Move;
 import engine.PiecePosition;
 
 import java.util.ArrayList;
@@ -11,8 +12,8 @@ public class King extends Piece {
     }
 
     @Override
-    public PiecePosition[] getMoves(Piece[][] piecesArray){
-        List<PiecePosition> currentMoves = new ArrayList<>();
+    public Move[] getMoves(Piece[][] piecesArray){
+        List<Move> currentMoves = new ArrayList<>();
 
         int x = getPostion().x;
         int y = getPostion().y;
@@ -25,13 +26,19 @@ public class King extends Piece {
                 if (incrementX == 0 && incrementY == 0) {
                     continue;
                 }
-                if (canMove(x + incrementX, y + incrementY, piecesArray)) {
-                    currentMoves.add(new PiecePosition(x + incrementX, y + incrementY));
+
+                int newX = x + incrementX;
+                int newY = y + incrementY;
+
+                if (canMove(newX, newY, piecesArray)) {
+                    currentMoves.add(new Move(newX, newY, this));
+                }else if(canCapture(newX, newY, piecesArray)) {
+                    currentMoves.add(new Move(newX, newY, this, true));
                 }
             }
         }
 
 
-        return currentMoves.toArray(new PiecePosition[0]);
+        return currentMoves.toArray(new Move[0]);
     }
 }

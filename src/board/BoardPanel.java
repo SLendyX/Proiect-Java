@@ -19,10 +19,11 @@ public class BoardPanel extends JPanel {
     ChessEngine chessEngine = new ChessEngine();
     BoardParameters boardParam;
     private static final double MOVE_INDICATOR_SIZE_RATIO = 13.0/36.0;
+    private static final double CAPTURE_INDICATOR_SIZE_RATIO = 0.935;
 
     public BoardPanel() {
         boardParam = new BoardParameters();
-        boardParam.switchBoardOrientation();
+//        boardParam.switchBoardOrientation();
 
         boardParam.setBoardColors(
                 new Color(223, 222, 222),
@@ -39,18 +40,9 @@ public class BoardPanel extends JPanel {
                 handleMouseClick(e);
             }
         });
-//        addMouseListener(new MouseAdapter(){
-//            @Override
-//            public void mouseEntered(MouseEvent e){
-//                handleMouseHover(e);
-//            }
-//        });
+
     }
 
-
-//    private void handleMouseHover(MouseEvent e){
-//        e.
-//    }
 
     private void handleMouseClick(MouseEvent e){
         int cellSize = boardParam.cellSize;
@@ -77,7 +69,7 @@ public class BoardPanel extends JPanel {
             Piece piece = chessEngine.piecesArray[realY][x];
 
 
-            if(chessEngine.doesMoveExist(x,realY) && chessEngine.piecesArray[realY][x] == null){
+            if(chessEngine.doesMoveExist(x,realY)){
                 System.out.printf("Moved %s to %s.%n", chessEngine.getMove(x,realY).getMoveAuthor().getType(), chessEngine.getChessCoords(x,realY));
 
                 piece = chessEngine.getMove(x,realY).getMoveAuthor();
@@ -304,13 +296,27 @@ public class BoardPanel extends JPanel {
             int xPos = getXPos(boardParam, x);
             int yPos = getYPos(boardParam, y);
 
-            int size = (int)(boardParam.cellSize*MOVE_INDICATOR_SIZE_RATIO);
+            int moveSize = (int)(boardParam.cellSize*MOVE_INDICATOR_SIZE_RATIO);
+            int captureSize = (int)(boardParam.cellSize*CAPTURE_INDICATOR_SIZE_RATIO);
 
-            xPos = xPos + (boardParam.cellSize - size) /2;
-            yPos = yPos + (boardParam.cellSize - size) /2;
 
 //            g.fillRect(xPos,yPos,boardParam.cellSize,boardParam.cellSize);
-            g.fillArc(xPos,yPos,size,size, 0, 360);
+            if(move.isCapture()){
+                Graphics2D g2 = (Graphics2D) g;
+
+                g2.setStroke(new BasicStroke(boardParam.cellSize - captureSize));
+
+                xPos = xPos + (boardParam.cellSize - captureSize) /2;
+                yPos = yPos + (boardParam.cellSize - captureSize) /2;
+
+                g2.drawArc(xPos, yPos, captureSize, captureSize, 0, 360);
+
+            }else{
+                xPos = xPos + (boardParam.cellSize - moveSize) /2;
+                yPos = yPos + (boardParam.cellSize - moveSize) /2;
+
+                g.fillArc(xPos,yPos,moveSize, moveSize, 0, 360);
+            }
         });
     }
     public void printPromotionPanel(BoardParameters boardParam, boolean isVisible, Piece pawn) {
