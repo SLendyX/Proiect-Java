@@ -365,7 +365,8 @@ public class BoardPanel extends JPanel {
                         int newY = promotionMove.getPiecePosition().y;
                         chessEngine.switchPiece(chessEngine.piecesArray[newY][newX], finalI);
                     } else {
-                        // Fallback to old behavior if promotionMove is null (should not happen in normal operation)
+                        // This should never happen - promotionMove should always be set when isPromoting is true
+                        System.err.println("Warning: promotionMove is null, promoting pawn in place");
                         chessEngine.switchPiece(chessEngine.piecesArray[posY][posX], finalI);
                     }
                     chessEngine.setIsPromoting(false);
