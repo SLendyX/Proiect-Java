@@ -72,12 +72,14 @@ public class BoardPanel extends JPanel {
             if(chessEngine.doesMoveExist(x,realY)){
                 System.out.printf("Moved %s to %s.%n", chessEngine.getMove(x,realY).getMoveAuthor().getType(), chessEngine.getChessCoords(x,realY));
 
-                piece = chessEngine.getMove(x,realY).getMoveAuthor();
+                Move currentMove = chessEngine.getMove(x,realY);
+                piece = currentMove.getMoveAuthor();
                 if(piece.getType().equals("pawn") && chessEngine.canPromote(piece)) {
                     chessEngine.setIsPromoting(true);
                     chessEngine.setPromotingPawn(piece);
+                    chessEngine.setPromotionMove(currentMove);
                 }else{
-                    chessEngine.swapSquares(chessEngine.getMove(x,realY));
+                    chessEngine.swapSquares(currentMove);
                     chessEngine.switchTurn();
                 }
                 chessEngine.setMovesArray(null);
@@ -89,6 +91,7 @@ public class BoardPanel extends JPanel {
                 if(chessEngine.getIsPromoting()){
                     chessEngine.setIsPromoting(false);
                     chessEngine.setPromotingPawn(null);
+                    chessEngine.setPromotionMove(null);
                     removeAll();
                 }
                 System.out.println(chessEngine.getMovesArray().size());
@@ -99,6 +102,7 @@ public class BoardPanel extends JPanel {
             if(chessEngine.getIsPromoting()){
                 chessEngine.setIsPromoting(false);
                 chessEngine.setPromotingPawn(null);
+                chessEngine.setPromotionMove(null);
                 removeAll();
             }
             repaint();
@@ -352,10 +356,22 @@ public class BoardPanel extends JPanel {
             button.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
-                    chessEngine.switchPiece(chessEngine.piecesArray[posY][posX], finalI);
-                    chessEngine.swapSquares(new Move(new PiecePosition(posX, chessEngine.piecesArray[posY][posX].isWhite() ? 0 : 7), chessEngine.piecesArray[posY][posX]));
+                    Move promotionMove = chessEngine.getPromotionMove();
+                    if(promotionMove != null) {
+                        // First swap the pawn to the promotion square
+                        chessEngine.swapSquares(promotionMove);
+                        // Then promote the piece at its new position
+                        int newX = promotionMove.getPiecePosition().x;
+                        int newY = promotionMove.getPiecePosition().y;
+                        chessEngine.switchPiece(chessEngine.piecesArray[newY][newX], finalI);
+                    } else {
+                        // This should never happen - promotionMove should always be set when isPromoting is true
+                        System.err.println("Warning: promotionMove is null, promoting pawn in place");
+                        chessEngine.switchPiece(chessEngine.piecesArray[posY][posX], finalI);
+                    }
                     chessEngine.setIsPromoting(false);
                     chessEngine.setPromotingPawn(null);
+                    chessEngine.setPromotionMove(null);
                     chessEngine.switchTurn();
 
                     removeAll();
