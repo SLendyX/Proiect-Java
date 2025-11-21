@@ -13,6 +13,7 @@ public class ChessEngine {
     boolean isPromoting = false;
     boolean turn = true;
     Piece promotingPawn;
+    Move promotionMove;
 
 
 
@@ -262,6 +263,14 @@ public class ChessEngine {
 
     public void switchTurn(){
         this.turn = !this.turn;
+    }
+
+    public void setPromotionMove(Move move){
+        this.promotionMove = move;
+    }
+
+    public Move getPromotionMove(){
+        return this.promotionMove;
     }
 
 }
