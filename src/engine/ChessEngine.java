@@ -16,7 +16,6 @@ public class ChessEngine {
     Move promotionMove;
 
 
-
     public Piece[][] piecesArray;
     private Map<String, Move> movesArray;
 
@@ -209,35 +208,30 @@ public class ChessEngine {
     }
 
     public void switchPiece(Piece pawn, int choice) {
-        if (canPromote(pawn)) {
-            int posY = pawn.getPostion().y;
-            int posX = pawn.getPostion().x;
-            boolean isWhite = pawn.isWhite();
+        System.out.println("Can promote pawn");
+        int posY = pawn.getPostion().y;
+        int posX = pawn.getPostion().x;
+        boolean isWhite = pawn.isWhite();
 
-
-
-
-            switch (choice) {
-                case 0:
-                    piecesArray[posY][posX] = new Queen(isWhite);
-                    piecesArray[posY][posX].setPosition(posX, posY);
-                    break;
-                case 3:
-                    piecesArray[posY][posX] = new Knight(isWhite);
-                    piecesArray[posY][posX].setPosition(posX, posY);
-                    break;
-                case 1:
-                    piecesArray[posY][posX] = new Rook(isWhite);
-                    piecesArray[posY][posX].setPosition(posX, posY);
-                    break;
-                case 2:
-                    piecesArray[posY][posX] = new Bishop(isWhite);
-                    piecesArray[posY][posX].setPosition(posX, posY);
-                    break;
-                default:
-                    break;
-            }
-
+        switch (choice) {
+            case 0:
+                piecesArray[posY][posX] = new Queen(isWhite);
+                piecesArray[posY][posX].setPosition(posX, posY);
+                break;
+            case 3:
+                piecesArray[posY][posX] = new Knight(isWhite);
+                piecesArray[posY][posX].setPosition(posX, posY);
+                break;
+            case 1:
+                piecesArray[posY][posX] = new Rook(isWhite);
+                piecesArray[posY][posX].setPosition(posX, posY);
+                break;
+            case 2:
+                piecesArray[posY][posX] = new Bishop(isWhite);
+                piecesArray[posY][posX].setPosition(posX, posY);
+                break;
+            default:
+                break;
         }
     }
 
