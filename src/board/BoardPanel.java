@@ -364,6 +364,9 @@ public class BoardPanel extends JPanel {
                         int newX = promotionMove.getPiecePosition().x;
                         int newY = promotionMove.getPiecePosition().y;
                         chessEngine.switchPiece(chessEngine.piecesArray[newY][newX], finalI);
+                    } else {
+                        // Fallback to old behavior if promotionMove is null (should not happen in normal operation)
+                        chessEngine.switchPiece(chessEngine.piecesArray[posY][posX], finalI);
                     }
                     chessEngine.setIsPromoting(false);
                     chessEngine.setPromotingPawn(null);
