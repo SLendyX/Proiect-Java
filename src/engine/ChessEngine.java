@@ -91,16 +91,14 @@ public class ChessEngine {
 
         piecesArray[moveY][moveX].setPosition(moveX, moveY);
 
-        if(piecesArray[moveY][moveX] instanceof Pawn pawn){
-            if(getEnPassantPawn() != null){
-                getEnPassantPawn().setCanEnPassant(false);
-                setEnPassantPawn(null);
-            }
-            pawn.setCanEnPassant(Math.abs(moveY - pieceY) == 2);
-            setEnPassantPawn(pawn);
-        }else if(getEnPassantPawn() != null){
+        if(getEnPassantPawn() != null){
             getEnPassantPawn().setCanEnPassant(false);
             setEnPassantPawn(null);
+        }
+
+        if(piecesArray[moveY][moveX] instanceof Pawn pawn){
+            pawn.setCanEnPassant(Math.abs(moveY - pieceY) == 2);
+            setEnPassantPawn(pawn);
         }
 
         if(!piecesArray[moveY][moveX].hasMoved()){
@@ -282,9 +280,7 @@ public class ChessEngine {
     private Piece[][] cloneBoard(Piece[][] board) {
         Piece[][] cloned = new Piece[8][8];
         for (int r = 0; r < 8; r++) {
-            for (int c = 0; c < 8; c++) {//clearer code and simple to debug if error
-                cloned[r][c] = board[r][c];//but has less performance than Arrays.copyOf
-            }
+            System.arraycopy(board[r], 0, cloned[r], 0, 8);
         }
         return cloned;
     }
