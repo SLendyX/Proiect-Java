@@ -324,7 +324,7 @@ public class BoardPanel extends JPanel {
     }
     public void printPromotionPanel(BoardParameters boardParam, boolean isVisible, Piece pawn) {
         if(!isVisible || pawn == null){
-            System.out.println("Deleting panel");
+//            System.out.println("Deleting panel");
             return ;
         }
 

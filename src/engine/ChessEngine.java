@@ -85,13 +85,17 @@ public class ChessEngine {
         piecesArray[moveY][moveX] = piece;
         piecesArray[pieceY][pieceX] = null;
 
-        if(move.isEnpassant()){
+        if(move.isEnpassant() && piecesArray[pieceY][moveX].isWhite() != getTurn()){
             piecesArray[pieceY][moveX] = null;
         }
 
         piecesArray[moveY][moveX].setPosition(moveX, moveY);
 
         if(piecesArray[moveY][moveX] instanceof Pawn pawn){
+            if(getEnPassantPawn() != null){
+                getEnPassantPawn().setCanEnPassant(false);
+                setEnPassantPawn(null);
+            }
             pawn.setCanEnPassant(Math.abs(moveY - pieceY) == 2);
             setEnPassantPawn(pawn);
         }else if(getEnPassantPawn() != null){
@@ -266,7 +270,7 @@ public class ChessEngine {
 
                 Move[] enemyMoves = p.getMoves(pieces);
                 for (Move m : enemyMoves) {
-                    if (m.getPiecePosition().x == x && m.getPiecePosition().y == y) {
+                    if (m.piecePosition().x == x && m.piecePosition().y == y) {
                         return true;
                     }
                 }
@@ -297,11 +301,15 @@ public class ChessEngine {
 
             int fromX = piece.getPostion().x;
             int fromY = piece.getPostion().y;
-            int toX   = m.getPiecePosition().x;
-            int toY   = m.getPiecePosition().y;
+            int toX   = m.piecePosition().x;
+            int toY   = m.piecePosition().y;
 
             cloned[fromY][fromX] = null;
             cloned[toY][toX] = piece;
+
+            if(m.isEnpassant() && cloned[fromY][toX].isWhite() != getTurn()){
+                cloned[fromY][toX] = null;
+            }
 
             int kingX = -1;
             int kingY = -1;

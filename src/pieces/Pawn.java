@@ -30,7 +30,6 @@ public class Pawn extends Piece{
         }
 
         if(piecesArray[y][x] != null && piecesArray[y][x] instanceof Pawn pawn){
-            System.out.printf("Pawn at: %s.  canEnpassant: %b%n", new ChessEngine().getChessCoords(x,y), pawn.getCanEnpassant());
             return pawn.getCanEnpassant();
         }
 
