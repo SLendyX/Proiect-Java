@@ -19,11 +19,10 @@ public class Bishop extends Piece {
         int x = getPostion().x;
         int y = getPostion().y;
 
-        int[] incrementsX = {1,-1};
-        int[] incrementsY = {-1,1};
+        int[] increments = {1,-1};
 
-        for(int incrementX:incrementsX){
-            for(int incrementY:incrementsY){
+        for(int incrementX:increments){
+            for(int incrementY:increments){
                 for(int i = 1; i < 8; i++) {
                     int newX = x + incrementX * i;
                     int newY = y + incrementY * i;
