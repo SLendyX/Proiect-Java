@@ -3,7 +3,6 @@ package board;
 import engine.ChessEngine;
 import engine.Move;
 import engine.OutOfPieceMatrixException;
-import engine.PiecePosition;
 import pieces.Piece;
 
 import javax.swing.*;
@@ -70,10 +69,10 @@ public class BoardPanel extends JPanel {
 
 
             if(chessEngine.doesMoveExist(x,realY)){
-                System.out.printf("Moved %s to %s.%n", chessEngine.getMove(x,realY).getMoveAuthor().getType(), chessEngine.getChessCoords(x,realY));
+                System.out.printf("Moved %s to %s.%n", chessEngine.getMove(x,realY).moveAuthor().getType(), chessEngine.getChessCoords(x,realY));
 
                 Move currentMove = chessEngine.getMove(x,realY);
-                piece = currentMove.getMoveAuthor();
+                piece = currentMove.moveAuthor();
                 if(piece.getType().equals("pawn") && chessEngine.canPromote(piece)) {
                     chessEngine.setIsPromoting(true);
                     chessEngine.setPromotingPawn(piece);
@@ -293,8 +292,8 @@ public class BoardPanel extends JPanel {
         g.setColor(new Color(1,0,0, 82));
 
         moves.forEach((key,move)->{
-            int x = move.getPiecePosition().x;
-            int y = boardParam.isReversed ? 7-move.getPiecePosition().y : move.getPiecePosition().y;
+            int x = move.piecePosition().x;
+            int y = boardParam.isReversed ? 7-move.piecePosition().y : move.piecePosition().y;
 
 
             int xPos = getXPos(boardParam, x);
@@ -361,8 +360,8 @@ public class BoardPanel extends JPanel {
                         // First swap the pawn to the promotion square
                         chessEngine.swapSquares(promotionMove);
                         // Then promote the piece at its new position
-                        int newX = promotionMove.getPiecePosition().x;
-                        int newY = promotionMove.getPiecePosition().y;
+                        int newX = promotionMove.piecePosition().x;
+                        int newY = promotionMove.piecePosition().y;
                         chessEngine.switchPiece(chessEngine.piecesArray[newY][newX], finalI);
                     } else {
                         // This should never happen - promotionMove should always be set when isPromoting is true

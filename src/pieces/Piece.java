@@ -94,6 +94,5 @@ public abstract class Piece  {
     }
 
 
-
     public abstract Move[] getMoves(Piece[][] piecesArray);
 }

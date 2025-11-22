@@ -11,12 +11,12 @@ import java.util.Map;
 public class ChessEngine {
     //    String defaultFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
     BoardParameters boardParam;
-    String defaultFen = "rnbqkbnr/pppppppp/8/8/8/8/PPP1PPPP/RNBQKBNR";
+    String defaultFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
     boolean isPromoting = false;
     boolean turn = true;
     Piece promotingPawn;
     Move promotionMove;
-
+    Pawn enPassantPawn;
 
     public Piece[][] piecesArray;
     private Map<String, Move> movesArray;
@@ -24,6 +24,14 @@ public class ChessEngine {
     public ChessEngine(){
         this.piecesArray = null;
         this.movesArray = null;
+    }
+
+    public void setEnPassantPawn(Pawn enPassantPawn) {
+        this.enPassantPawn = enPassantPawn;
+    }
+
+    public Pawn getEnPassantPawn(){
+        return this.enPassantPawn;
     }
 
     public void setMovesArray(Piece piece){
@@ -36,8 +44,8 @@ public class ChessEngine {
 
         Move[] moves = filterLegalMoves(piece, piecesArray);
 
-        for (Move move : moves){
-            String key = move.getPiecePosition().chessCoordinate;
+        for(Move move : moves){
+            String key = move.piecePosition().chessCoordinate;
             movesMap.put(key, move);
         }
 
@@ -66,16 +74,31 @@ public class ChessEngine {
     }
 
     public void swapSquares(Move move){
-        int moveX = move.getPiecePosition().x;
-        int moveY = move.getPiecePosition().y;
+        int moveX = move.piecePosition().x;
+        int moveY = move.piecePosition().y;
 
-        int pieceX = move.getMoveAuthor().getPostion().x;
-        int pieceY = move.getMoveAuthor().getPostion().y;
+        Piece piece = move.moveAuthor();
 
-        piecesArray[moveY][moveX] = move.getMoveAuthor();
+        int pieceX = piece.getPostion().x;
+        int pieceY = piece.getPostion().y;
+
+        piecesArray[moveY][moveX] = piece;
         piecesArray[pieceY][pieceX] = null;
 
+        if(move.isEnpassant()){
+            piecesArray[pieceY][moveX] = null;
+        }
+
         piecesArray[moveY][moveX].setPosition(moveX, moveY);
+
+        if(piecesArray[moveY][moveX] instanceof Pawn pawn){
+            pawn.setCanEnPassant(Math.abs(moveY - pieceY) == 2);
+            setEnPassantPawn(pawn);
+        }else if(getEnPassantPawn() != null){
+            getEnPassantPawn().setCanEnPassant(false);
+            setEnPassantPawn(null);
+        }
+
         if(!piecesArray[moveY][moveX].hasMoved()){
             piecesArray[moveY][moveX].setHasMoved(true);
         }

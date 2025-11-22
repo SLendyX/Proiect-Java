@@ -2,44 +2,21 @@ package engine;
 
 import pieces.Piece;
 
-public class Move {
-    private final PiecePosition piecePosition;
-    private final Piece moveAuthor;
-    private final boolean isCapture;
-
-    public Move(PiecePosition piecePosition, Piece moveAuthor){
-        this.piecePosition = piecePosition;
-        this.moveAuthor = moveAuthor;
-        this.isCapture = false;
-    }
-
-    public Move(PiecePosition piecePosition, Piece moveAuthor, boolean isCapture) {
-        this.piecePosition = piecePosition;
-        this.moveAuthor = moveAuthor;
-        this.isCapture = isCapture;
+public record Move(PiecePosition piecePosition, Piece moveAuthor, boolean isCapture, boolean isEnpassant) {
+    public Move(PiecePosition piecePosition, Piece moveAuthor, boolean isEnpassant) {
+        this(piecePosition, moveAuthor, false, isEnpassant);
     }
 
     public Move(int x, int y, Piece moveAuthor) {
-        this.piecePosition = new PiecePosition(x,y);
-        this.moveAuthor = moveAuthor;
-        this.isCapture = false;
+        this(new PiecePosition(x, y), moveAuthor, false, false);
     }
 
     public Move(int x, int y, Piece moveAuthor, boolean isCapture) {
-        this.piecePosition = new PiecePosition(x,y);
-        this.moveAuthor = moveAuthor;
-        this.isCapture = isCapture;
+        this(new PiecePosition(x, y), moveAuthor, isCapture, false);
     }
 
-    public PiecePosition getPiecePosition() {
-        return piecePosition;
-    }
 
-    public Piece getMoveAuthor() {
-        return moveAuthor;
-    }
-
-    public boolean isCapture() {
-        return isCapture;
+    public Move(int x, int y, Piece moveAuthor, boolean isCapture, boolean isEnpassant) {
+        this(new PiecePosition(x, y), moveAuthor, isCapture, isEnpassant);
     }
 }
