@@ -3,7 +3,9 @@ package engine;
 import board.BoardParameters;
 import pieces.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ChessEngine {
@@ -25,20 +27,16 @@ public class ChessEngine {
     }
 
     public void setMovesArray(Piece piece){
-        if(piece == null){
+        if (piece == null) {
             this.movesArray = null;
             return;
         }
 
         Map<String, Move> movesMap = new HashMap<>();
 
-        Move[] moves = piece.getMoves(piecesArray);
-        if (moves == null) {
-            this.movesArray = null;
-            return;
-        }
+        Move[] moves = filterLegalMoves(piece, piecesArray);
 
-        for(Move move : moves){
+        for (Move move : moves){
             String key = move.getPiecePosition().chessCoordinate;
             movesMap.put(key, move);
         }
@@ -234,6 +232,80 @@ public class ChessEngine {
                 break;
         }
     }
+
+    public boolean isSquareAttacked(int x, int y, boolean turn, Piece[][] pieces) {
+        for (int row = 0; row < 8; row++) {
+            for (int col = 0; col < 8; col++) {
+
+                Piece p = pieces[row][col];
+                if (p == null) continue;
+                if (p.isWhite() == turn) continue;
+
+                Move[] enemyMoves = p.getMoves(pieces);
+                for (Move m : enemyMoves) {
+                    if (m.getPiecePosition().x == x && m.getPiecePosition().y == y) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private Piece[][] cloneBoard(Piece[][] board) {
+        Piece[][] cloned = new Piece[8][8];
+        for (int r = 0; r < 8; r++) {
+            for (int c = 0; c < 8; c++) {//clearer code and simple to debug if error
+                cloned[r][c] = board[r][c];//but has less performance than Arrays.copyOf
+            }
+        }
+        return cloned;
+    }
+    public Move[] filterLegalMoves(Piece piece, Piece[][] board) {
+
+        List<Move> legal = new ArrayList<>();
+
+        Move[] rawMoves = piece.getMoves(board);
+        if (rawMoves == null) return new Move[0];
+
+        for (Move m : rawMoves) {
+
+            Piece[][] cloned = cloneBoard(board);
+
+            int fromX = piece.getPostion().x;
+            int fromY = piece.getPostion().y;
+            int toX   = m.getPiecePosition().x;
+            int toY   = m.getPiecePosition().y;
+
+            cloned[fromY][fromX] = null;
+            cloned[toY][toX] = piece;
+
+            int kingX = -1;
+            int kingY = -1;
+
+            for (int r = 0; r < 8; r++) {
+                for (int c = 0; c < 8; c++) {
+                    Piece p = cloned[r][c];
+                    if (p instanceof King && p.isWhite() == piece.isWhite()) {
+                        kingX = c;
+                        kingY = r;
+                    }
+                }
+            }
+
+            // if king square is attacked, illegal move
+            if (isSquareAttacked(kingX, kingY, piece.isWhite(), cloned)) {
+                continue;
+            }
+
+            legal.add(m);
+        }
+
+        return legal.toArray(new Move[0]);
+    }
+
+
+
 
     public void setIsPromoting(boolean isPromoting){
         this.isPromoting = isPromoting;
