@@ -322,7 +322,9 @@ public class ChessEngine {
     private Piece[][] cloneBoard(Piece[][] board) {
         Piece[][] cloned = new Piece[8][8];
         for (int r = 0; r < 8; r++) {
-            System.arraycopy(board[r], 0, cloned[r], 0, 8);
+            for (int c = 0; c < 8; c++) {
+                cloned[r][c] = board[r][c];
+            }
         }
         return cloned;
     }
@@ -356,13 +358,21 @@ public class ChessEngine {
 
                 System.out.println(rookX + " " + rookY + " " + m.rook());
 
-                cloned[fromY][dirX] = cloned[rookY][rookX];
-                cloned[fromY][dirX].setPosition(dirX, fromY);
+                // Check if the rook exists at the expected position before moving it
+                // The rook might not be there if its position was corrupted by a previous simulation
+                if (cloned[rookY][rookX] != null) {
+                    cloned[fromY][dirX] = cloned[rookY][rookX];
+                    // Don't call setPosition() here - we're just simulating the move
+                    // and don't want to modify the original piece's internal state
+                    // The piece's position will be updated when the move is actually executed
+                    cloned[rookY][rookX] = null;
+                } else {
+                    // If rook is not at expected position, skip this castle move
+                    // This prevents the NullPointerException
+                    continue;
+                }
 
                 System.out.println( m.rook().getPostion().x + " " + m.rook().getPostion().y);
-
-
-                cloned[rookY][rookX] = null;
             }
 
             int kingX = -1;
