@@ -22,6 +22,6 @@ public record Move(PiecePosition piecePosition, Piece moveAuthor, boolean isCapt
     }
 
     public Move(int x, int y, Piece moveAuthor, boolean isCapture, boolean isEnpassant, boolean isCastle, Rook rook) {
-        this(new PiecePosition(x, y), moveAuthor, isCapture, isEnpassant, isCastle, new Rook(rook.isWhite(), rook.getPostion()));
+        this(new PiecePosition(x, y), moveAuthor, isCapture, isEnpassant, isCastle, rook);
     }
 }

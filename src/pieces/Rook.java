@@ -10,10 +10,6 @@ public class Rook extends Piece {
     public Rook(boolean isWhite) {
         super(isWhite, "rook");
     }
-    public Rook(boolean isWhite, PiecePosition position){
-        super(isWhite, "rook");
-        this.piecePosition = position;
-    }
 
     @Override
     public Move[] getMoves(Piece[][] piecesArray){
@@ -26,7 +22,6 @@ public class Rook extends Piece {
         int[] increments = {0,1,-1};
 
 
-        System.out.println("Rook");
         for(int incrementX:increments){
             for(int incrementY:increments){
                 if((incrementX == 0 || incrementY == 0) && incrementX != incrementY)

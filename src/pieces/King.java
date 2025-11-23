@@ -9,15 +9,6 @@ public class King extends Piece {
     public King(boolean isWhite) {
         super(isWhite, "king");
     }
-    boolean castledRight;
-
-    public void setCastledRight(boolean castledRight) {
-        this.castledRight = castledRight;
-    }
-
-    public boolean getCastledRight(){
-        return this.castledRight;
-    }
 
     private boolean canCastle(int rookX, int y, Piece[][] board) {
         // 1. King must not have moved (you wanted this preserved)
