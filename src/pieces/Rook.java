@@ -21,6 +21,7 @@ public class Rook extends Piece {
 
         int[] increments = {0,1,-1};
 
+
         for(int incrementX:increments){
             for(int incrementY:increments){
                 if((incrementX == 0 || incrementY == 0) && incrementX != incrementY)
@@ -29,6 +30,7 @@ public class Rook extends Piece {
                         int newY = y + incrementY * i;
 
                         if (canMove(newX, newY, piecesArray) ) {
+                            System.out.println("can move");
                             currentMoves.add(new Move(newX, newY, this));
                         } else {
                             if(canCapture(newX, newY, piecesArray)) {
