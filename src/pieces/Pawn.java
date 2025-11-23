@@ -24,7 +24,7 @@ public class Pawn extends Piece{
         return this.canEnpassant;
     }
 
-    public boolean canEnPassant(int x, int y, Piece[][] piecesArray){
+    private boolean canEnPassant(int x, int y, Piece[][] piecesArray){
         if(x < 0 || x > 7 || y < 0 || y > 7){
             return false;
         }

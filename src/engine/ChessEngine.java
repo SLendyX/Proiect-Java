@@ -11,12 +11,13 @@ import java.util.Map;
 public class ChessEngine {
     //    String defaultFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
     BoardParameters boardParam;
-    String defaultFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+    String defaultFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RN2K1NR";
     boolean isPromoting = false;
     boolean turn = true;
     Piece promotingPawn;
     Move promotionMove;
     Pawn enPassantPawn;
+    King castledKing;
 
     public Piece[][] piecesArray;
     private Map<String, Move> movesArray;
@@ -24,6 +25,14 @@ public class ChessEngine {
     public ChessEngine(){
         this.piecesArray = null;
         this.movesArray = null;
+    }
+
+    public void setCastledKing(King castledKing) {
+        this.castledKing = castledKing;
+    }
+
+    public King getCastledKing() {
+        return castledKing;
     }
 
     public void setEnPassantPawn(Pawn enPassantPawn) {
@@ -85,8 +94,34 @@ public class ChessEngine {
         piecesArray[moveY][moveX] = piece;
         piecesArray[pieceY][pieceX] = null;
 
+
+        if(getCastledKing()!=null){
+            setCastledKing(null);
+        }
+
         if(move.isEnpassant() && piecesArray[pieceY][moveX].isWhite() != getTurn()){
             piecesArray[pieceY][moveX] = null;
+        }else if(move.isCastle()){
+            System.out.println("WORKS FINE");
+            boolean direction = moveX - pieceX >= 0;
+            int dirX = direction ? pieceX + 1 : pieceX - 1;
+
+            int rookX = move.rook().getPostion().x;
+            int rookY = move.rook().getPostion().y;
+
+            System.out.println(rookX + " " + rookY);
+
+
+            piecesArray[pieceY][dirX] = move.rook();
+            piecesArray[pieceY][dirX].setHasMoved(true);
+            piecesArray[pieceY][dirX].setPosition(dirX, pieceY);
+
+            piecesArray[rookY][rookX] = null;
+
+            if(piecesArray[moveY][moveX] instanceof King king){
+                king.setCastledRight(direction);
+                setCastledKing(king);
+            }
         }
 
         piecesArray[moveY][moveX].setPosition(moveX, moveY);
@@ -268,6 +303,13 @@ public class ChessEngine {
 
                 Move[] enemyMoves = p.getMoves(pieces);
                 for (Move m : enemyMoves) {
+                    if(castledKing != null){
+                        int direction = castledKing.getCastledRight() ? -1 : 1;
+                        if (m.piecePosition().x == x+direction && m.piecePosition().y == y+direction) {
+                            return true;
+                        }
+                    }
+
                     if (m.piecePosition().x == x && m.piecePosition().y == y) {
                         return true;
                     }
@@ -303,8 +345,24 @@ public class ChessEngine {
             cloned[fromY][fromX] = null;
             cloned[toY][toX] = piece;
 
-            if(m.isEnpassant() && cloned[fromY][toX].isWhite() != getTurn()){
+            if(m.isEnpassant() && cloned[fromY][toX].isWhite() != getTurn()) {
                 cloned[fromY][toX] = null;
+            }else if(m.isCastle()){
+                boolean direction = toX - fromX >= 0;
+                int dirX = direction ? fromX + 1 : fromX - 1;
+
+                int rookX = m.rook().getPostion().x;
+                int rookY = m.rook().getPostion().y;
+
+                System.out.println(rookX + " " + rookY + " " + m.rook());
+
+                cloned[fromY][dirX] = cloned[rookY][rookX];
+                cloned[fromY][dirX].setPosition(dirX, fromY);
+
+                System.out.println( m.rook().getPostion().x + " " + m.rook().getPostion().y);
+
+
+                cloned[rookY][rookX] = null;
             }
 
             int kingX = -1;
