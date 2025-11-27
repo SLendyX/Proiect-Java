@@ -3,6 +3,10 @@ package engine;
 import board.BoardParameters;
 import pieces.*;
 
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import java.net.URL;
 import java.util.*;
 
 public class ChessEngine {
@@ -16,12 +20,47 @@ public class ChessEngine {
     Pawn enPassantPawn;
     King castledKing;
 
+    private Clip moveSound;
+    private Clip captureSound;
+    private Clip castleSound;
+
     public Piece[][] piecesArray;
     private Map<String, Move> movesArray;
 
     public ChessEngine(){
         this.piecesArray = null;
         this.movesArray = null;
+        this.moveSound    = loadClip("/data/audio/move-self.wav");
+        this.captureSound = loadClip("/data/audio/capture.wav");
+        this.castleSound  = loadClip("/data/audio/castle.wav");
+    }
+
+    private Clip loadClip(String path) {
+        try {
+            URL url = getClass().getResource(path);
+            System.out.println(url);
+            if (url == null) {
+                System.err.println("Audio not found: " + path);
+                return null;
+            }
+
+            AudioInputStream stream = AudioSystem.getAudioInputStream(url);
+            Clip clip = AudioSystem.getClip();
+            clip.open(stream);
+            return clip;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private void playSound(Clip clip) {
+        if (clip == null) return;
+
+        clip.stop();       // stop if still playing
+        clip.setFramePosition(0);
+        clip.start();      // play again from start
     }
 
     public void setCastledKing(King castledKing) {
@@ -80,6 +119,14 @@ public class ChessEngine {
     }
 
     public void swapSquares(Move move){
+        if(move.isCapture()){
+            playSound(captureSound);
+        }else if(move.isCastle()){
+            playSound(castleSound);
+        }else{
+            playSound(moveSound);
+        }
+
         int moveX = move.piecePosition().x;
         int moveY = move.piecePosition().y;
 

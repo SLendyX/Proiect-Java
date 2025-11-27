@@ -1,0 +1,73 @@
+.
+├── data
+│   ├── audio
+│   │   ├── capture.wav
+│   │   ├── castle.wav
+│   │   ├── game-end.wav
+│   │   ├── game-start.wav
+│   │   ├── illegal.wav
+│   │   ├── move-check.wav
+│   │   ├── move-self.wav
+│   │   ├── promote.wav
+│   │   └── tenseconds.wav
+│   └── pieces
+│       ├── black
+│       │   ├── bishop.png
+│       │   ├── king.png
+│       │   ├── knight.png
+│       │   ├── pawn.png
+│       │   ├── queen.png
+│       │   └── rook.png
+│       └── white
+│           ├── bishop.png
+│           ├── king.png
+│           ├── knight.png
+│           ├── pawn.png
+│           ├── queen.png
+│           └── rook.png
+├── out
+│   └── production
+│       └── Proiect_Sah
+│           ├── board
+│           │   ├── BoardPanel$1.class
+│           │   ├── BoardPanel$2.class
+│           │   ├── BoardPanel.class
+│           │   ├── BoardParameters.class
+│           │   └── OutOfBoardException.class
+│           ├── engine
+│           │   ├── ChessEngine.class
+│           │   ├── Move.class
+│           │   ├── OutOfPieceMatrixException.class
+│           │   └── PiecePosition.class
+│           ├── Main.class
+│           └── pieces
+│               ├── Bishop.class
+│               ├── King.class
+│               ├── Knight.class
+│               ├── Pawn.class
+│               ├── Piece.class
+│               ├── Queen.class
+│               └── Rook.class
+├── Proiect_Sah.iml
+├── src
+│   ├── board
+│   │   ├── BoardPanel.java
+│   │   ├── BoardParameters.java
+│   │   └── OutOfBoardException.java
+│   ├── engine
+│   │   ├── ChessEngine.java
+│   │   ├── Move.java
+│   │   ├── OutOfPieceMatrixException.java
+│   │   └── PiecePosition.java
+│   ├── Main.java
+│   └── pieces
+│       ├── Bishop.java
+│       ├── King.java
+│       ├── Knight.java
+│       ├── Pawn.java
+│       ├── Piece.java
+│       ├── Queen.java
+│       └── Rook.java
+└── tree.txt
+
+16 directories, 55 files
