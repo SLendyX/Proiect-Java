@@ -1,9 +1,11 @@
 package pieces;
 
+import engine.ChessEngine;
 import engine.Move;
 
 import java.util.ArrayList;
 import java.util.List;
+
 
 public class King extends Piece {
     public King(boolean isWhite) {

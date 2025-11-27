@@ -332,6 +332,7 @@ public class ChessEngine {
             int toX   = m.piecePosition().x;
             int toY   = m.piecePosition().y;
 
+
             cloned[fromY][fromX] = null;
             cloned[toY][toX] = piece;
 
@@ -340,6 +341,10 @@ public class ChessEngine {
             if(m.isEnpassant() && cloned[fromY][toX].isWhite() != getTurn()) {
                 cloned[fromY][toX] = null;
             }else if(m.isCastle()){
+                if(isSquareAttacked(fromX, fromY, getTurn(), cloned)){
+                    continue;
+                }
+
                 boolean direction = toX - fromX >= 0;
                 int dirX = direction ? fromX + 1 : fromX - 1;
 
