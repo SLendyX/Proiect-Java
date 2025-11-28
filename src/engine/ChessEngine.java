@@ -36,9 +36,9 @@ public class ChessEngine {
     }
 
     private Clip loadClip(String path) {
+//            return null;
         try {
             URL url = getClass().getResource(path);
-            System.out.println(url);
             if (url == null) {
                 System.err.println("Audio not found: " + path);
                 return null;

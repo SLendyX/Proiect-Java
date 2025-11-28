@@ -18,7 +18,12 @@ public abstract class Piece  {
 
     Piece(boolean isWhite,String pieceType) {
         this.isWhite = isWhite;
-        this.image = new ImageIcon("./data/pieces/"+ (isWhite ? "white" : "black") +"/"+pieceType+".png").getImage();
+        java.net.URL imgUrl = getClass().getResource("/data/pieces/" + (isWhite ? "white" : "black") + "/" + pieceType + ".png");
+        if (imgUrl != null) {
+            this.image = new ImageIcon(imgUrl).getImage();
+        } else {
+            System.err.println("Imaginea nu a fost găsită: " + pieceType);
+        }
         this.type = pieceType;
 
         if(pieceType.equals("knight")){

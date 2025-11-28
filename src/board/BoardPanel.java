@@ -335,8 +335,11 @@ public class BoardPanel extends JPanel {
 
         ImageIcon[] images = new ImageIcon[pieces.length];
 
-        for(int i=0;i<images.length;i++){
-            images[i] = new ImageIcon("data/pieces/"+ (pawn.isWhite() ? "white" : "black") +"/"+ pieces[i] +".png");
+        for(int i=0; i<images.length; i++){
+            java.net.URL imgUrl = getClass().getResource("/data/pieces/" + (pawn.isWhite() ? "white" : "black") + "/" + pieces[i] + ".png");
+            if (imgUrl != null) {
+                images[i] = new ImageIcon(imgUrl);
+            }
         }
 
         int posX = pawn.getPostion().x;
