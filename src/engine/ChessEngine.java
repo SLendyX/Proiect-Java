@@ -35,6 +35,10 @@ public class ChessEngine {
         this.castleSound  = loadClip("/data/audio/castle.wav");
     }
 
+    public String getDefaultFen() {
+        return defaultFen;
+    }
+
     private Clip loadClip(String path) {
 
         try {

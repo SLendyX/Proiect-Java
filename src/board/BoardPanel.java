@@ -1,9 +1,11 @@
 package board;
 
 import engine.ChessEngine;
+import engine.GameTimer;
 import engine.Move;
 import engine.OutOfPieceMatrixException;
 import pieces.Piece;
+
 
 import javax.swing.*;
 import java.awt.*;
@@ -19,6 +21,7 @@ public class BoardPanel extends JPanel {
     BoardParameters boardParam;
     private static final double MOVE_INDICATOR_SIZE_RATIO = 13.0/36.0;
     private static final double CAPTURE_INDICATOR_SIZE_RATIO = 0.935;
+    private GameTimer gameTimer;
 
     public BoardPanel() {
         boardParam = new BoardParameters();
@@ -32,6 +35,7 @@ public class BoardPanel extends JPanel {
 
         chessEngine.setBoardParams(boardParam);
         chessEngine.instantiatePieceArray();
+        gameTimer = new GameTimer(chessEngine, this);
 
         addMouseListener(new MouseAdapter(){
             @Override
@@ -78,6 +82,9 @@ public class BoardPanel extends JPanel {
                     chessEngine.setPromotingPawn(piece);
                     chessEngine.setPromotionMove(currentMove);
                 }else{
+                    if(chessEngine.getCurrentFen().equals(chessEngine.getDefaultFen())){
+                        gameTimer.startTimer();
+                    }
                     chessEngine.swapSquares(currentMove);
                     chessEngine.switchTurn();
                 }
@@ -391,8 +398,9 @@ public class BoardPanel extends JPanel {
         g.setFont(font);
         g.setColor(new Color(1,1,1));
 
-        String timpPlayer1 = "5:00";
-        String timpPlayer2 = "5:00";
+
+        String timpPlayer1 = formatTime(gameTimer.getTimeWhite());
+        String timpPlayer2 = formatTime(gameTimer.getTimeBlack());
         int xtimpPlayer1 = boardParam.startX + boardParam.boardSize + boardParam.margin;
         int ytimpPlayer1  = boardParam.startY + boardParam.boardSize/2 + cellSize;
         int xtimpPlayer2  = boardParam.startX + boardParam.boardSize + boardParam.margin;
@@ -400,9 +408,14 @@ public class BoardPanel extends JPanel {
 
         g.drawString(timpPlayer1, xtimpPlayer1, ytimpPlayer1);
         g.drawString(timpPlayer2, xtimpPlayer2, ytimpPlayer2);
-
     }
 
+    private String formatTime(long millis) {
+        long totalSeconds = millis / 1000;
+        long minutes = totalSeconds / 60;
+        long seconds = totalSeconds % 60;
+        return String.format("%d:%02d", minutes, seconds);
+    }
 
 
 }
