@@ -117,10 +117,10 @@ public class BoardPanel extends JPanel {
             Piece piece = chessEngine.piecesArray[realY][x];
 
 //             // NOU: Nu permite mutarea daca nu e randul tau
-//            if (!isMyTurn) {
-//                System.out.println("Asteapta mutarea adversarului.");
-//                return; // Iesi din functie
-//            }
+            if (!isMyTurn) {
+                System.out.println("Asteapta mutarea adversarului.");
+                return; // Iesi din functie
+            }
 
             if(chessEngine.doesMoveExist(x,realY)){
                 System.out.printf("Moved %s to %s.%n", chessEngine.getMove(x,realY).moveAuthor().getType(), ChessEngine.getChessCoords(x,realY));
@@ -136,12 +136,11 @@ public class BoardPanel extends JPanel {
                         gameTimer.startTimer();
                     }
                     // NOU: Trimite mutarea prin rețea
-//                    networkManager.sendMove(currentMove);
+                    networkManager.sendMove(currentMove);
                     chessEngine.swapSquares(currentMove);
                     chessEngine.switchTurn();
-//                    this.isMyTurn = false; // Am terminat mutarea, aștept mutarea adversarului
-                    // Inverseaza orientarea tablei (pentru adversar)
-//                    boardParam.switchBoardOrientation();
+                    this.isMyTurn = false; // Am terminat mutarea, aștept mutarea adversarului
+//                     Inverseaza orientarea tablei (pentru adversar)
                 }
 
                 chessEngine.setMovesArray(null);
@@ -520,7 +519,7 @@ public class BoardPanel extends JPanel {
         this.isMyTurn = true; // Acum este rândul jucatorului local
 
         // 4. Inverseaza orientarea tablei
-        boardParam.switchBoardOrientation();
+//        boardParam.switchBoardOrientation();
 
         // 5. Redeseneaza tabla
         repaint();
