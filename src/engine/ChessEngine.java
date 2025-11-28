@@ -20,9 +20,9 @@ public class ChessEngine {
     Pawn enPassantPawn;
     King castledKing;
 
-    private Clip moveSound;
-    private Clip captureSound;
-    private Clip castleSound;
+    private final Clip moveSound;
+    private final Clip captureSound;
+    private final Clip castleSound;
 
     public Piece[][] piecesArray;
     private Map<String, Move> movesArray;
@@ -30,13 +30,13 @@ public class ChessEngine {
     public ChessEngine(){
         this.piecesArray = null;
         this.movesArray = null;
-        this.moveSound    = loadClip("/data/audio/move-self.wav");
+        this.moveSound = loadClip("/data/audio/move-self.wav");
         this.captureSound = loadClip("/data/audio/capture.wav");
         this.castleSound  = loadClip("/data/audio/castle.wav");
     }
 
     private Clip loadClip(String path) {
-//            return null;
+
         try {
             URL url = getClass().getResource(path);
             if (url == null) {
@@ -141,7 +141,6 @@ public class ChessEngine {
         if(move.isEnpassant() && piecesArray[pieceY][moveX].isWhite() != getTurn()){
             piecesArray[pieceY][moveX] = null;
         }else if(move.isCastle()){
-            System.out.println("WORKS FINE");
             boolean direction = moveX - pieceX >= 0;
             int dirX = direction ? pieceX + 1 : pieceX - 1;
 
@@ -265,7 +264,7 @@ public class ChessEngine {
         return fen.toString();
     }
 
-    public String getChessCoords(int x, int y){
+    public static String getChessCoords(int x, int y){
         String cols = "abcdefgh";
         String rows = "87654321";
 
@@ -273,7 +272,7 @@ public class ChessEngine {
                 rows.charAt(y);
     }
 
-    public String getChessCoords(int x, int y, boolean isReversed){
+    public static String getChessCoords(int x, int y, boolean isReversed){
         String cols;
         String rows;
         if(isReversed){

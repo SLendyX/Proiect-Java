@@ -24,7 +24,6 @@ public class BoardPanel extends JPanel {
         boardParam = new BoardParameters();
 //      boardParam.switchBoardOrientation();
 
-
         boardParam.setBoardColors(
                 new Color(223, 222, 222),
                 new Color(181, 136, 99),

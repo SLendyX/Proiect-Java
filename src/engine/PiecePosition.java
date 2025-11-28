@@ -9,13 +9,13 @@ public class PiecePosition {
 
     public PiecePosition(int x, int y)
     {
-        this.chessCoordinate=new ChessEngine().getChessCoords(x,y);
+        this.chessCoordinate=ChessEngine.getChessCoords(x,y);
         this.x=x;
         this.y=y;
     }
 
     public PiecePosition(int x, int y, boolean isReversed){
-        this.chessCoordinate=new ChessEngine().getChessCoords(x,y, isReversed);
+        this.chessCoordinate=ChessEngine.getChessCoords(x,y, isReversed);
         this.x=x;
         this.y=y;
     }

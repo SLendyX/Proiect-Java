@@ -30,7 +30,6 @@ public class Rook extends Piece {
                         int newY = y + incrementY * i;
 
                         if (canMove(newX, newY, piecesArray) ) {
-                            System.out.println("can move");
                             currentMoves.add(new Move(newX, newY, this));
                         } else {
                             if(canCapture(newX, newY, piecesArray)) {
