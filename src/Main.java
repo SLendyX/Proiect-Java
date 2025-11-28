@@ -1,4 +1,4 @@
-import board.BoardPanel;
+import board.Menu;
 
 import javax.swing.*;
 import java.awt.*;
@@ -8,7 +8,8 @@ public class Main {
 
     public static void main(String[] args) {
         JFrame frame = new JFrame("Chess");
-        BoardPanel board = new BoardPanel();
+
+        Menu menu = new Menu(frame);
 
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -23,7 +24,8 @@ public class Main {
                 (screenSize.height-frame.getHeight())/2
         );
 
-        frame.add(board);
+        frame.add(menu);
+        frame.revalidate();
     }
 
 }
