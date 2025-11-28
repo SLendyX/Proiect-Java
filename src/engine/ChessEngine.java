@@ -19,10 +19,15 @@ public class ChessEngine {
     Move promotionMove;
     Pawn enPassantPawn;
     King castledKing;
+    boolean isChecked;
+    int gameState;
 
     private final Clip moveSound;
     private final Clip captureSound;
     private final Clip castleSound;
+    private final Clip checkSound;
+    private final Clip gameEndSound;
+    private final Clip promotionSound;
 
     public Piece[][] piecesArray;
     private Map<String, Move> movesArray;
@@ -33,6 +38,9 @@ public class ChessEngine {
         this.moveSound = loadClip("/data/audio/move-self.wav");
         this.captureSound = loadClip("/data/audio/capture.wav");
         this.castleSound  = loadClip("/data/audio/castle.wav");
+        this.checkSound = loadClip("/data/audio/move-check.wav");
+        this.gameEndSound = loadClip("/data/audio/game-end.wav");
+        this.promotionSound = loadClip("/data/audio/promote.wav");
     }
 
     public String getDefaultFen() {
@@ -123,14 +131,6 @@ public class ChessEngine {
     }
 
     public void swapSquares(Move move){
-        if(move.isCapture()){
-            playSound(captureSound);
-        }else if(move.isCastle()){
-            playSound(castleSound);
-        }else{
-            playSound(moveSound);
-        }
-
         int moveX = move.piecePosition().x;
         int moveY = move.piecePosition().y;
 
@@ -168,6 +168,23 @@ public class ChessEngine {
             setEnPassantPawn(null);
         }
 
+        setIsChecked(!getTurn());
+        setGameState(!getTurn());
+
+        if(getGameState() != 0){
+            playSound(gameEndSound);
+        }else if(isChecked()){
+            playSound(checkSound);
+        }else if(getIsPromoting()){
+            playSound(promotionSound);
+        }else if(move.isCapture()){
+            playSound(captureSound);
+        }else if(move.isCastle()) {
+            playSound(castleSound);
+        }else{
+            playSound(moveSound);
+        }
+
         if(piecesArray[moveY][moveX] instanceof Pawn pawn){
             pawn.setCanEnPassant(Math.abs(moveY - pieceY) == 2);
             setEnPassantPawn(pawn);
@@ -186,7 +203,6 @@ public class ChessEngine {
         return this.boardParam;
     }
 
-
     public void instantiatePieceArray(String fen){
         createPieceArray(fen);
     }
@@ -201,7 +217,7 @@ public class ChessEngine {
         int row=0, col=0;
         for(String fenRow : defaultFen.split("/")){
             for(String fenCol : fenRow.split("")){
-                ///checks if text is a number
+                //checks if text is a number
                 if(fenCol.charAt(0) > '0' &&  fenCol.charAt(0) < '9'){
                     int x = Integer.parseInt(fenCol);
                     for(int j = 0; j < x; j++){
@@ -330,6 +346,7 @@ public class ChessEngine {
         }
     }
 
+
     public boolean isSquareAttacked(int x, int y, boolean turn, Piece[][] pieces) {
         for (int row = 0; row < 8; row++) {
             for (int col = 0; col < 8; col++) {
@@ -356,6 +373,7 @@ public class ChessEngine {
         }
         return false;
     }
+
 
     private Piece[][] cloneBoard(Piece[][] board) {
         Piece[][] cloned = new Piece[8][8];
@@ -412,21 +430,10 @@ public class ChessEngine {
 
             }
 
-            int kingX = -1;
-            int kingY = -1;
-
-            for (int r = 0; r < 8; r++) {
-                for (int c = 0; c < 8; c++) {
-                    Piece p = cloned[r][c];
-                    if (p instanceof King && p.isWhite() == piece.isWhite()) {
-                        kingX = c;
-                        kingY = r;
-                    }
-                }
-            }
+            PiecePosition kingPosition = getKingPos(cloned, piece.isWhite());
 
             // if king square is attacked, illegal move
-            if (isSquareAttacked(kingX, kingY, piece.isWhite(), cloned)) {
+            if (isSquareAttacked(kingPosition.x, kingPosition.y, piece.isWhite(), cloned)) {
                 continue;
             }
 
@@ -436,8 +443,73 @@ public class ChessEngine {
         return legal.toArray(new Move[0]);
     }
 
+    public PiecePosition getKingPos(Piece[][] board, boolean turn){
+        int kingX = -1;
+        int kingY = -1;
 
+        for (int r = 0; r < 8; r++) {
+            for (int c = 0; c < 8; c++) {
+                Piece p = board[r][c];
+                if (p instanceof King && p.isWhite() == turn) {
+                    kingX = c;
+                    kingY = r;
+                }
+            }
+        }
 
+        return new PiecePosition(kingX, kingY);
+    }
+
+    public void setIsChecked(boolean turn){
+        PiecePosition kingPosition = getKingPos(this.piecesArray, turn);
+        this.isChecked = isSquareAttacked(kingPosition.x, kingPosition.y, turn, this.piecesArray);
+    }
+
+    public int calculateGameState(boolean turn) {
+        boolean hasLegalMoves = false;
+        outerLoop:
+        for (int r = 0; r < 8; r++) {
+            for (int c = 0; c < 8; c++) {
+                Piece p = piecesArray[r][c];
+                if (p != null && p.isWhite() == turn) {
+                    Move[] legalMoves = filterLegalMoves(p, this.piecesArray);
+                    if (legalMoves.length > 0) {
+                        hasLegalMoves = true;
+                        break outerLoop;
+                    }
+                }
+            }
+        }
+
+        if (hasLegalMoves) {
+            return 0;
+        }
+
+        if (isChecked()) {
+            return getTurn() ? 1 : 2;
+        }else{
+            return 3;
+        }
+    }
+
+    public void resetGame() {
+        this.piecesArray = null;
+        this.movesArray = null;
+        this.turn = true;
+        this.isPromoting = false;
+        this.promotingPawn = null;
+        this.promotionMove = null;
+        this.enPassantPawn = null;
+        this.castledKing = null;
+        this.isChecked = false;
+        this.gameState = 0;
+
+        instantiatePieceArray(defaultFen);
+    }
+
+    public boolean isChecked() {
+        return isChecked;
+    }
 
     public void setIsPromoting(boolean isPromoting){
         this.isPromoting = isPromoting;
@@ -469,6 +541,14 @@ public class ChessEngine {
 
     public Move getPromotionMove(){
         return this.promotionMove;
+    }
+
+    public void setGameState(boolean turn) {
+        this.gameState = calculateGameState(turn);
+    }
+
+    public int getGameState() {
+        return this.gameState;
     }
 
 }

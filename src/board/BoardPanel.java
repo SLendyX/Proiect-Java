@@ -4,14 +4,17 @@ import engine.ChessEngine;
 import engine.GameTimer;
 import engine.Move;
 import engine.OutOfPieceMatrixException;
+import network.NetworkManager;
 import pieces.Piece;
-
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.Map;
+
+import network.NetworkMove;
+import pieces.Rook;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
@@ -22,10 +25,29 @@ public class BoardPanel extends JPanel {
     private static final double MOVE_INDICATOR_SIZE_RATIO = 13.0/36.0;
     private static final double CAPTURE_INDICATOR_SIZE_RATIO = 0.935;
     private GameTimer gameTimer;
+    private GameOverPanel gameOverPanel;
+    private NetworkManager networkManager;
+    private boolean isMyTurn;
+    private JFrame frame;
 
-    public BoardPanel() {
+    public BoardPanel(JFrame parentFrame) {
+        setBoardAtributes(parentFrame);
+    }
+
+    public BoardPanel(JFrame parentFrame, NetworkManager networkManager) {
+        setBoardAtributes(parentFrame);
+
+        this.networkManager = networkManager;
+        this.isMyTurn = networkManager.isHost();
+        networkManager.setMoveReceivedCallback(this::handleReceivedMove);
+
+        if (!networkManager.isHost()) {
+            boardParam.switchBoardOrientation();
+        }
+    }
+
+    public void setBoardAtributes(JFrame parentFrame){
         boardParam = new BoardParameters();
-//      boardParam.switchBoardOrientation();
 
         boardParam.setBoardColors(
                 new Color(223, 222, 222),
@@ -37,13 +59,36 @@ public class BoardPanel extends JPanel {
         chessEngine.instantiatePieceArray();
         gameTimer = new GameTimer(chessEngine, this);
 
+        gameOverPanel = new GameOverPanel(
+                () -> {
+                    Menu menu = new Menu(parentFrame);
+
+                    parentFrame.getContentPane().removeAll();
+                    parentFrame.add(menu);
+
+                    menu.startGame();
+                },
+                () -> {
+                Menu menu = new Menu(parentFrame);
+
+                // Inlatura tabla de joc curenta si adauga meniul
+                parentFrame.getContentPane().removeAll();
+                parentFrame.add(menu);
+
+                // Revalideaza layout-ul
+                parentFrame.revalidate();
+                parentFrame.repaint();
+            }
+        );
+
+        add(gameOverPanel);
+
         addMouseListener(new MouseAdapter(){
             @Override
             public void mousePressed(MouseEvent e){
                 handleMouseClick(e);
             }
         });
-
     }
 
 
@@ -71,9 +116,14 @@ public class BoardPanel extends JPanel {
 
             Piece piece = chessEngine.piecesArray[realY][x];
 
+//             // NOU: Nu permite mutarea daca nu e randul tau
+//            if (!isMyTurn) {
+//                System.out.println("Asteapta mutarea adversarului.");
+//                return; // Iesi din functie
+//            }
 
             if(chessEngine.doesMoveExist(x,realY)){
-                System.out.printf("Moved %s to %s.%n", chessEngine.getMove(x,realY).moveAuthor().getType(), chessEngine.getChessCoords(x,realY));
+                System.out.printf("Moved %s to %s.%n", chessEngine.getMove(x,realY).moveAuthor().getType(), ChessEngine.getChessCoords(x,realY));
 
                 Move currentMove = chessEngine.getMove(x,realY);
                 piece = currentMove.moveAuthor();
@@ -85,11 +135,22 @@ public class BoardPanel extends JPanel {
                     if(chessEngine.getCurrentFen().equals(chessEngine.getDefaultFen())){
                         gameTimer.startTimer();
                     }
+                    // NOU: Trimite mutarea prin rețea
+//                    networkManager.sendMove(currentMove);
                     chessEngine.swapSquares(currentMove);
                     chessEngine.switchTurn();
+//                    this.isMyTurn = false; // Am terminat mutarea, aștept mutarea adversarului
+                    // Inverseaza orientarea tablei (pentru adversar)
+//                    boardParam.switchBoardOrientation();
                 }
+
                 chessEngine.setMovesArray(null);
                 repaint();
+                if(chessEngine.getGameState() != 0){
+                    gameTimer.resetTimer();
+                    showGameOverScreen(chessEngine.getGameState());
+                }
+
             }else if(chessEngine.piecesArray[realY][x] == null){
                 throw new OutOfPieceMatrixException("Selected square does not contain a chess piece!");
             }else if(chessEngine.getTurn() == piece.isWhite()){
@@ -122,8 +183,23 @@ public class BoardPanel extends JPanel {
         printGame(g);
     }
 
-    public void printGame(Graphics g){
+    private void showGameOverScreen(int gameState){
+        String message = "";
+        switch(gameState){
+            case 1 -> message = "Checkmate! White Wins!";
+            case 2 -> message = "Checkmate! Black Wins!";
+            case 3 -> message = "Stalemate! Draw.";
+        }
 
+        gameOverPanel.setMessage(message);
+        gameOverPanel.setBounds(0,0, getWidth(), getHeight());
+        gameOverPanel.setVisible(true);
+
+        setComponentZOrder(gameOverPanel,0);
+        repaint();
+    }
+
+    public void printGame(Graphics g){
         int boardSize = min(getWidth(), getHeight());
         int startX = (getWidth()-boardSize)/2;
         int startY = (getHeight() - boardSize) / 2;
@@ -294,7 +370,7 @@ public class BoardPanel extends JPanel {
             return;
         }
 
-        System.out.println("Drawing moves ...");
+//        System.out.println("Drawing moves ...");
 
         g.setColor(new Color(1,0,0, 82));
 
@@ -367,12 +443,11 @@ public class BoardPanel extends JPanel {
                 public void mouseClicked(MouseEvent e) {
                     Move promotionMove = chessEngine.getPromotionMove();
                     if(promotionMove != null) {
-                        // First swap the pawn to the promotion square
-                        chessEngine.swapSquares(promotionMove);
-                        // Then promote the piece at its new position
-                        int newX = promotionMove.piecePosition().x;
-                        int newY = promotionMove.piecePosition().y;
-                        chessEngine.switchPiece(chessEngine.piecesArray[newY][newX], finalI);
+
+                        chessEngine.switchPiece(chessEngine.piecesArray[posY][posX], finalI);
+
+                        chessEngine.swapSquares(new Move(promotionMove.piecePosition().x, promotionMove.piecePosition().y, chessEngine.piecesArray[posY][posX]));
+
                     } else {
                         // This should never happen - promotionMove should always be set when isPromoting is true
                         System.err.println("Warning: promotionMove is null");
@@ -415,6 +490,40 @@ public class BoardPanel extends JPanel {
         long minutes = totalSeconds / 60;
         long seconds = totalSeconds % 60;
         return String.format("%d:%02d", minutes, seconds);
+    }
+
+    // Adaugati aceasta metoda in BoardPanel.java
+    private void handleReceivedMove(NetworkMove netMove) {
+        // 1. Reconstruieste obiectul Move din NetworkMove
+        Piece movedPiece = chessEngine.piecesArray[netMove.fromY][netMove.fromX];
+
+        if (movedPiece == null) {
+            System.err.println("Eroare: Mutare primita pentru o pozitie goala.");
+            return;
+        }
+
+        // Daca nu e o mutare speciala (rocarie, enpassant) se poate folosi Move simplu
+        // Pentru rocarie, trebuie gasita tura in pozitia initiala
+        Rook rook = null;
+        if (netMove.isCastle) {
+            int rookX = netMove.toX > netMove.fromX ? 7 : 0;
+            rook = (Rook) chessEngine.piecesArray[netMove.fromY][rookX];
+        }
+
+        Move currentMove = new Move(netMove.toX, netMove.toY, movedPiece, netMove.isCapture, netMove.isEnpassant, netMove.isCastle, rook);
+
+        // 2. Executa mutarea pe tabla locala
+        chessEngine.swapSquares(currentMove);
+
+        // 3. Actualizeaza starea
+        chessEngine.switchTurn();
+        this.isMyTurn = true; // Acum este rândul jucatorului local
+
+        // 4. Inverseaza orientarea tablei
+        boardParam.switchBoardOrientation();
+
+        // 5. Redeseneaza tabla
+        repaint();
     }
 
 

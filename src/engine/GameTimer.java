@@ -22,6 +22,12 @@ public class GameTimer implements Runnable{
         new Thread(this).start();
     }
 
+    public void resetTimer(){
+        if(isRunning) this.isRunning = false;
+        timeWhite = INITIAL_TIME;
+        timeBlack = INITIAL_TIME;
+    }
+
     @Override
     public void run() {
         long lastTime = System.currentTimeMillis();
