@@ -12,7 +12,7 @@ import java.util.*;
 public class ChessEngine {
     //    String defaultFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
     BoardParameters boardParam;
-    String defaultFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+    String defaultFen = "k7/8/8/8/8/8/8/3NK3";
     boolean isPromoting = false;
     boolean turn = true;
     Piece promotingPawn;
@@ -21,6 +21,7 @@ public class ChessEngine {
     King castledKing;
     boolean isChecked;
     int gameState;
+    private int halfMoveClock = 0;
 
     private final Clip moveSound;
     private final Clip captureSound;
@@ -73,6 +74,10 @@ public class ChessEngine {
         clip.stop();       // stop if still playing
         clip.setFramePosition(0);
         clip.start();      // play again from start
+    }
+
+    public void playEndSound(){
+        playSound(gameEndSound);
     }
 
     public void setCastledKing(King castledKing) {
@@ -166,6 +171,12 @@ public class ChessEngine {
         if(getEnPassantPawn() != null){
             getEnPassantPawn().setCanEnPassant(false);
             setEnPassantPawn(null);
+        }
+
+        if (piece instanceof Pawn || move.isCapture()) {
+            halfMoveClock = 0;
+        } else {
+            halfMoveClock++;
         }
 
         setIsChecked(!getTurn());
@@ -375,6 +386,56 @@ public class ChessEngine {
     }
 
 
+    private boolean hasInsufficientMaterial(){
+        List<Piece> allPieces = new ArrayList<>();
+        boolean whiteHasKnight = false;
+        boolean blackHasKnight = false;
+
+        for (int r = 0; r < 8; r++) {
+            for (int c = 0; c < 8; c++) {
+                Piece p = piecesArray[r][c];
+                if(p != null) {
+                    if(p instanceof Queen ||p instanceof Rook || p instanceof Pawn){
+                        return false;
+                    }
+
+                    allPieces.add(p);
+                    if(p instanceof Knight){
+                        if(p.isWhite()) whiteHasKnight = true;
+                        else blackHasKnight = true;
+                    }
+                }
+            }
+        }
+
+        if(allPieces.size() == 2){
+            return true;
+        }
+        if(allPieces.size() == 3){
+            return true;
+        }
+        if(!whiteHasKnight && !blackHasKnight) {
+            int firstSquareColor = -1;
+
+            for (Piece p : allPieces) {
+                if (p instanceof Bishop) {
+                    int x = p.getPostion().x;
+                    int y = p.getPostion().y;
+                    int currentSquareColor = (x + y) % 2;
+
+                    if (firstSquareColor == -1) {
+                        firstSquareColor = currentSquareColor;
+                    } else if (firstSquareColor != currentSquareColor) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+
     private Piece[][] cloneBoard(Piece[][] board) {
         Piece[][] cloned = new Piece[8][8];
         for(int r = 0; r < 8; r++){
@@ -485,11 +546,19 @@ public class ChessEngine {
             return 0;
         }
 
+        if(hasInsufficientMaterial()){
+            return 6;
+        }else if(halfMoveClock >= 100){
+            return 7;
+        }
+
         if (isChecked()) {
             return getTurn() ? 1 : 2;
         }else{
             return 3;
         }
+
+
     }
 
     public void resetGame() {
@@ -502,6 +571,7 @@ public class ChessEngine {
         this.enPassantPawn = null;
         this.castledKing = null;
         this.isChecked = false;
+        this.halfMoveClock = 0;
         this.gameState = 0;
 
         instantiatePieceArray(defaultFen);

@@ -7,8 +7,9 @@ public class GameTimer implements Runnable{
     private long timeWhite; // Timpul în milisecunde pentru jucatorul Alb
     private long timeBlack; // Timpul în milisecunde pentru jucatorul Negru
     private boolean isRunning;
-    private final long INITIAL_TIME = 5 * 60 * 1000; // 5 minute in milisecunde
-
+    private final long INITIAL_TIME = 5 * 1000; // 5 minute in milisecunde
+    private boolean paused;
+    
     public GameTimer(ChessEngine chessEngine, BoardPanel boardPanel) {
         this.chessEngine = chessEngine;
         this.boardPanel = boardPanel;
@@ -36,6 +37,14 @@ public class GameTimer implements Runnable{
     public void run() {
         long lastTime = System.currentTimeMillis();
         while (isRunning) {
+            while(paused){
+                lastTime = System.currentTimeMillis();
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
             long currentTime = System.currentTimeMillis();
             long delta = currentTime - lastTime;
             lastTime = currentTime;
@@ -53,7 +62,8 @@ public class GameTimer implements Runnable{
                 timeWhite = timeWhite < 0 ? 0 : timeWhite;
                 timeBlack = timeBlack < 0 ? 0 : timeBlack;
                 isRunning = false; // Opreste jocul
-
+                chessEngine.playEndSound();
+                boardPanel.showGameOverScreen(getWinner());
             }
 
             // Declanseaza re-desenarea panoului pentru a actualiza ceasul
@@ -76,4 +86,18 @@ public class GameTimer implements Runnable{
     public long getTimeBlack() {
         return timeBlack;
     }
+
+    public int getWinner(){
+        if(getTimeWhite() == 0){
+            return 5;
+        }else if(getTimeBlack() == 0){
+            return 4;
+        }
+        return 0;
+    }
+
+    public void togglePause(){
+        this.paused = !this.paused;
+    }
+
 }

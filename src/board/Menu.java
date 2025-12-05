@@ -10,6 +10,7 @@ import java.net.URL;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+
 public class Menu extends JPanel {
     private final JFrame parentFrame;
     private Image backgroundImage;
@@ -98,6 +99,12 @@ public class Menu extends JPanel {
     }
 
     private void robotGame() {
+        parentFrame.getContentPane().removeAll();
+        AIMenu aiMenu = new AIMenu(parentFrame,this);
+        parentFrame.add(aiMenu);
+        parentFrame.revalidate();
+        parentFrame.repaint();
+        aiMenu.requestFocusInWindow();
     }
 
     @Override
@@ -154,5 +161,13 @@ public class Menu extends JPanel {
         parentFrame.repaint();
 
         board.requestFocusInWindow();
+    }
+
+    public void showMenu() {
+        parentFrame.getContentPane().removeAll();
+        parentFrame.add(this); // Adaugă instanța Menu înapoi în Frame
+        parentFrame.revalidate();
+        parentFrame.repaint();
+        this.requestFocusInWindow();
     }
 }

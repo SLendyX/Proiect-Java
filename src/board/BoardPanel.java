@@ -9,6 +9,8 @@ import pieces.Piece;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.Map;
@@ -26,6 +28,7 @@ public class BoardPanel extends JPanel {
     private static final double CAPTURE_INDICATOR_SIZE_RATIO = 0.935;
     private GameTimer gameTimer;
     private GameOverPanel gameOverPanel;
+    private MenuPopUp menuPopUp;
     private NetworkManager networkManager;
     private boolean isMyTurn;
     private JFrame frame;
@@ -48,6 +51,7 @@ public class BoardPanel extends JPanel {
     }
 
     public void setBoardAtributes(JFrame parentFrame){
+        this.setLayout(null);
         boardParam = new BoardParameters();
 
         boardParam.setBoardColors(
@@ -83,7 +87,29 @@ public class BoardPanel extends JPanel {
             }
         );
 
+        menuPopUp = new MenuPopUp(
+                () -> {
+                    gameTimer.togglePause();
+
+                    showMenuPopUp(false);
+
+                    this.requestFocusInWindow();
+                    },
+                () -> {
+                    Menu menu = new Menu(parentFrame);
+
+                    // Inlatura tabla de joc curenta si adauga meniul
+                    parentFrame.getContentPane().removeAll();
+                    parentFrame.add(menu);
+
+                    // Revalideaza layout-ul
+                    parentFrame.revalidate();
+                    parentFrame.repaint();
+                }
+        );
+
         add(gameOverPanel);
+        add(menuPopUp);
 
         addMouseListener(new MouseAdapter(){
             @Override
@@ -91,8 +117,20 @@ public class BoardPanel extends JPanel {
                 handleMouseClick(e);
             }
         });
+        addKeyListener(new KeyAdapter(){
+            @Override
+            public void keyPressed(KeyEvent e){
+                handleKeyPress(e);
+            }
+        });
     }
 
+    private void handleKeyPress(KeyEvent e){
+        if(e.getKeyCode() == KeyEvent.VK_ESCAPE){
+            gameTimer.togglePause();
+            showMenuPopUp(!menuPopUp.isVisible());
+        }
+    }
 
     private void handleMouseClick(MouseEvent e){
         int cellSize = boardParam.cellSize;
@@ -148,6 +186,8 @@ public class BoardPanel extends JPanel {
 
                 chessEngine.setMovesArray(null);
                 repaint();
+
+
                 if(chessEngine.getGameState() != 0){
                     gameTimer.stopTimer();
                     showGameOverScreen(chessEngine.getGameState());
@@ -185,19 +225,31 @@ public class BoardPanel extends JPanel {
         printGame(g);
     }
 
-    private void showGameOverScreen(int gameState){
-        String message = "";
+    public void showGameOverScreen(int gameState){ String message = "";
         switch(gameState){
             case 1 -> message = "Checkmate! White Wins!";
             case 2 -> message = "Checkmate! Black Wins!";
             case 3 -> message = "Stalemate! Draw.";
+            case 4 -> message = "Time ran out! White Wins!";
+            case 5 -> message = "Time ran out! Black Wins!";
+            case 6 -> message = "Draw, insufficient material";
+            case 7 -> message = "Draw.";
+            case 8 -> message = "Draw by repetition!";
         }
 
-        gameOverPanel.setMessage(message);
-        gameOverPanel.setBounds(0,0, getWidth(), getHeight());
+        gameOverPanel.setLabelMessage(message);
         gameOverPanel.setVisible(true);
 
+        gameOverPanel.setBounds(0,0, getWidth(), getHeight());
+
         setComponentZOrder(gameOverPanel,0);
+        repaint();
+    }
+
+    public void showMenuPopUp(boolean visible){
+        menuPopUp.setVisible(visible);
+        menuPopUp.setBounds(0,0, getWidth(), getHeight());
+        setComponentZOrder(menuPopUp,0);
         repaint();
     }
 
