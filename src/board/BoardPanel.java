@@ -32,6 +32,7 @@ public class BoardPanel extends JPanel {
 
     public BoardPanel(JFrame parentFrame) {
         setBoardAtributes(parentFrame);
+        this.isMyTurn = true;
     }
 
     public BoardPanel(JFrame parentFrame, NetworkManager networkManager) {
@@ -61,6 +62,7 @@ public class BoardPanel extends JPanel {
 
         gameOverPanel = new GameOverPanel(
                 () -> {
+                    gameTimer.resetTimer();
                     Menu menu = new Menu(parentFrame);
 
                     parentFrame.getContentPane().removeAll();
@@ -136,17 +138,18 @@ public class BoardPanel extends JPanel {
                         gameTimer.startTimer();
                     }
                     // NOU: Trimite mutarea prin rețea
-                    networkManager.sendMove(currentMove);
+                    if(networkManager != null){
+                        networkManager.sendMove(currentMove);
+                        this.isMyTurn = false;
+                    }
                     chessEngine.swapSquares(currentMove);
                     chessEngine.switchTurn();
-                    this.isMyTurn = false; // Am terminat mutarea, aștept mutarea adversarului
-//                     Inverseaza orientarea tablei (pentru adversar)
                 }
 
                 chessEngine.setMovesArray(null);
                 repaint();
                 if(chessEngine.getGameState() != 0){
-                    gameTimer.resetTimer();
+                    gameTimer.stopTimer();
                     showGameOverScreen(chessEngine.getGameState());
                 }
 
