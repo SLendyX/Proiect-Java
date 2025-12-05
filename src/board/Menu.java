@@ -6,15 +6,29 @@ import javax.swing.SwingUtilities;
 
 import javax.swing.*;
 import java.awt.*;
+import java.net.URL;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 public class Menu extends JPanel {
     private final JFrame parentFrame;
+    private Image backgroundImage;
 
     public Menu(JFrame frame){
         this.parentFrame = frame;
         setLayout(new GridBagLayout());
+
+        // NOU: ÎNCARCĂ IMAGINEA
+        try {
+            URL imageUrl = getClass().getResource("/data/background/shaw.png");
+            if (imageUrl != null) {
+                this.backgroundImage = new ImageIcon(imageUrl).getImage();
+            } else {
+                System.err.println("Imaginea de fundal nu a fost găsită.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         setBackground(new Color(50,50,50));
         JLabel title = new JLabel("Menu");
@@ -84,6 +98,15 @@ public class Menu extends JPanel {
     }
 
     private void robotGame() {
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        if (backgroundImage != null) {
+            // Desenează imaginea scalată pentru a umple întregul panou
+            g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+        }
     }
 
     // Functie pentru a porni jocul in retea (RULEAZA PE UN THREAD SEPARAT!)
