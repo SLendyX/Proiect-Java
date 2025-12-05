@@ -28,6 +28,10 @@ public class GameTimer implements Runnable{
         timeBlack = INITIAL_TIME;
     }
 
+    public void stopTimer(){
+        isRunning = false;
+    }
+
     @Override
     public void run() {
         long lastTime = System.currentTimeMillis();
@@ -49,7 +53,7 @@ public class GameTimer implements Runnable{
                 timeWhite = timeWhite < 0 ? 0 : timeWhite;
                 timeBlack = timeBlack < 0 ? 0 : timeBlack;
                 isRunning = false; // Opreste jocul
-                // Aici puteti adauga logica de game-end
+
             }
 
             // Declanseaza re-desenarea panoului pentru a actualiza ceasul
