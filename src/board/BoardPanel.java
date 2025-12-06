@@ -31,10 +31,12 @@ public class BoardPanel extends JPanel {
     private MenuPopUp menuPopUp;
     private NetworkManager networkManager;
     private boolean isMyTurn;
-    private JFrame frame;
+    SidePanel sidePanel;
 
-    public BoardPanel(JFrame parentFrame) {
+    public BoardPanel(JFrame parentFrame, SidePanel sidePanel) {
         setBoardAtributes(parentFrame);
+        this.sidePanel = sidePanel;
+        this.sidePanel.setGameTimer(gameTimer);
         this.isMyTurn = true;
     }
 
@@ -51,6 +53,7 @@ public class BoardPanel extends JPanel {
     }
 
     public void setBoardAtributes(JFrame parentFrame){
+        chessEngine.playStartSound();
         this.setLayout(null);
         boardParam = new BoardParameters();
 
@@ -235,6 +238,9 @@ public class BoardPanel extends JPanel {
             case 6 -> message = "Draw, insufficient material";
             case 7 -> message = "Draw.";
             case 8 -> message = "Draw by repetition!";
+            case 9 -> message = "White resigned";
+            case 10 -> message = "Black resigned";
+            case 11 -> message = "Draw by agreement";
         }
 
         gameOverPanel.setLabelMessage(message);

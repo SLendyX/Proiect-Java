@@ -1,5 +1,6 @@
 package board;
 
+import engine.ChessEngine;
 import network.NetworkManager;
 import java.io.IOException;
 import javax.swing.SwingUtilities;
@@ -7,8 +8,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.*;
 import java.awt.*;
 import java.net.URL;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 
 public class Menu extends JPanel {
@@ -91,8 +90,12 @@ public class Menu extends JPanel {
 
     public void startGame(){
         parentFrame.getContentPane().removeAll();
-        BoardPanel board = new BoardPanel(parentFrame);
-        parentFrame.add(board);
+        parentFrame.setLayout(new BorderLayout());
+        ChessEngine engine = new ChessEngine();
+        SidePanel sidePanel = new SidePanel(engine, null, parentFrame, this::showMenu);
+        BoardPanel board = new BoardPanel(parentFrame, sidePanel);
+        parentFrame.add(board, BorderLayout.CENTER);
+        parentFrame.add(sidePanel, BorderLayout.EAST);
         parentFrame.revalidate();
         parentFrame.repaint();
         board.requestFocusInWindow();

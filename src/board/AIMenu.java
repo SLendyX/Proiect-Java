@@ -104,7 +104,8 @@ public class AIMenu extends JPanel {
     private void startAIGame(int difficultyElo) {
         // Logica pentru a porni jocul (rămâne de implementat pentru AI)
         parentFrame.getContentPane().removeAll();
-        BoardPanel board = new BoardPanel(parentFrame); // Placeholder
+
+        BoardPanel board = new BoardPanel(parentFrame, (SidePanel) null); // Placeholder
         parentFrame.add(board);
         parentFrame.revalidate();
         parentFrame.repaint();

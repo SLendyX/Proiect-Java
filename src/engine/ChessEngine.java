@@ -11,8 +11,12 @@ import java.util.*;
 
 public class ChessEngine {
     //    String defaultFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+//    "k7/8/8/8/8/8/8/3NK3"
     BoardParameters boardParam;
-    String defaultFen = "k7/8/8/8/8/8/8/3NK3";
+    String defaultFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+    String castleFen = "KQkq";
+    Map<String, Integer> positionMap = new HashMap<>();
+
     boolean isPromoting = false;
     boolean turn = true;
     Piece promotingPawn;
@@ -27,6 +31,7 @@ public class ChessEngine {
     private final Clip captureSound;
     private final Clip castleSound;
     private final Clip checkSound;
+    private final Clip gameStartSound;
     private final Clip gameEndSound;
     private final Clip promotionSound;
 
@@ -40,6 +45,7 @@ public class ChessEngine {
         this.captureSound = loadClip("/data/audio/capture.wav");
         this.castleSound  = loadClip("/data/audio/castle.wav");
         this.checkSound = loadClip("/data/audio/move-check.wav");
+        this.gameStartSound = loadClip("/data/audio/game-start.wav");
         this.gameEndSound = loadClip("/data/audio/game-end.wav");
         this.promotionSound = loadClip("/data/audio/promote.wav");
     }
@@ -74,6 +80,10 @@ public class ChessEngine {
         clip.stop();       // stop if still playing
         clip.setFramePosition(0);
         clip.start();      // play again from start
+    }
+
+    public void playStartSound() {
+        playSound(gameStartSound);
     }
 
     public void playEndSound(){
@@ -132,8 +142,41 @@ public class ChessEngine {
         }
 
         return this.movesArray.get(getChessCoords(x, y));
-
     }
+
+    public void modifyCastleFen(boolean isWhite){
+        if(castleFen.length() > 2){
+            castleFen = isWhite ? "kq" : "KQ";
+        }else{
+            castleFen = "-";
+        }
+    }
+
+    public void modifyCastleFenForRook(Rook rook){
+        int x = rook.getPostion().x;
+        if(x!=0 && x!=7)
+            return;
+
+        boolean isWhite = rook.isWhite();
+
+        char symbol = x == 0 ? 'q' : 'k';
+        symbol = isWhite ? Character.toUpperCase(symbol) : symbol;
+
+        StringBuilder builder = new StringBuilder();
+
+        for(int i=0; i <castleFen.length(); i++){
+            if(symbol != castleFen.charAt(i)){
+                builder.append(castleFen.charAt(i));
+            }
+        }
+
+        castleFen = builder.toString();
+
+        if(castleFen.isEmpty()){
+            castleFen = "-";
+        }
+    }
+
 
     public void swapSquares(Move move){
         int moveX = move.piecePosition().x;
@@ -158,12 +201,21 @@ public class ChessEngine {
 
             System.out.println(rookX + " " + rookY);
 
-
             piecesArray[pieceY][dirX] = move.rook();
             piecesArray[pieceY][dirX].setHasMoved(true);
             piecesArray[pieceY][dirX].setPosition(dirX, pieceY);
 
             piecesArray[rookY][rookX] = null;
+        }
+
+        if(piece instanceof King king){
+            if(!king.hasMoved()){
+                modifyCastleFen(king.isWhite());
+            }
+        }else if(piece instanceof Rook rook){
+            if(!rook.hasMoved()){
+                modifyCastleFenForRook(rook);
+            }
         }
 
         piecesArray[moveY][moveX].setPosition(moveX, moveY);
@@ -178,6 +230,19 @@ public class ChessEngine {
         } else {
             halfMoveClock++;
         }
+
+        if(piecesArray[moveY][moveX] instanceof Pawn pawn){
+            pawn.setCanEnPassant(Math.abs(moveY - pieceY) == 2);
+            if(pawn.getCanEnpassant())
+                setEnPassantPawn(pawn);
+        }
+
+        if(!piecesArray[moveY][moveX].hasMoved()){
+            piecesArray[moveY][moveX].setHasMoved(true);
+        }
+
+
+        updatePositions();
 
         setIsChecked(!getTurn());
         setGameState(!getTurn());
@@ -196,14 +261,7 @@ public class ChessEngine {
             playSound(moveSound);
         }
 
-        if(piecesArray[moveY][moveX] instanceof Pawn pawn){
-            pawn.setCanEnPassant(Math.abs(moveY - pieceY) == 2);
-            setEnPassantPawn(pawn);
-        }
-
-        if(!piecesArray[moveY][moveX].hasMoved()){
-            piecesArray[moveY][moveX].setHasMoved(true);
-        }
+        System.out.printf("Full FEN:%s (count: %d)%n", getFullFen(), positionMap.get(getFullFen()));
     }
 
     public void setBoardParams(BoardParameters boardParam){
@@ -295,6 +353,29 @@ public class ChessEngine {
         return fen.toString();
     }
 
+    public String getFullFen(){
+        StringBuilder fen = new StringBuilder();
+        fen.append(getCurrentFen()).append(" ");
+
+        fen.append(castleFen).append(" ");
+
+        if(enPassantPawn == null){
+            fen.append("-");
+        }else{
+            fen.append(getChessCoords(enPassantPawn.getPostion(), boardParam.isReversed));
+        }
+
+        return fen.toString();
+    }
+
+    public void updatePositions(){
+        String key = getFullFen();
+        int counter = positionMap.get(key) == null ? 1 : positionMap.get(key) + 1;
+
+        positionMap.put(key, counter);
+    }
+
+
     public static String getChessCoords(int x, int y){
         String cols = "abcdefgh";
         String rows = "87654321";
@@ -316,6 +397,13 @@ public class ChessEngine {
 
         return String.valueOf(cols.charAt(x)) +
                 rows.charAt(y);
+    }
+
+    public static String getChessCoords(PiecePosition position, boolean isReversed){
+        int x = position.x;
+        int y = position.y;
+
+        return getChessCoords(x, y, isReversed);
     }
 
     public boolean canPromote(Piece pawn){
@@ -526,7 +614,32 @@ public class ChessEngine {
         this.isChecked = isSquareAttacked(kingPosition.x, kingPosition.y, turn, this.piecesArray);
     }
 
+    public void resign() {
+        if (turn) {
+            this.gameState = 9;
+        } else {
+            this.gameState = 10;
+        }
+        playEndSound();
+    }
+
+    public void agreeDraw() {
+        this.gameState = 11;
+        playEndSound();
+    }
+
+    public boolean isGameOver() {
+        return gameState != 0;
+    }
+
     public int calculateGameState(boolean turn) {
+        if(hasInsufficientMaterial()){
+            return 6;
+        }else if(halfMoveClock >= 100){
+            return 7;
+        }else if(positionMap.get(getFullFen()) != null && positionMap.get(getFullFen()) >=3){
+            return 8;
+        }
         boolean hasLegalMoves = false;
         outerLoop:
         for (int r = 0; r < 8; r++) {
@@ -546,19 +659,11 @@ public class ChessEngine {
             return 0;
         }
 
-        if(hasInsufficientMaterial()){
-            return 6;
-        }else if(halfMoveClock >= 100){
-            return 7;
-        }
-
         if (isChecked()) {
             return getTurn() ? 1 : 2;
         }else{
             return 3;
         }
-
-
     }
 
     public void resetGame() {
