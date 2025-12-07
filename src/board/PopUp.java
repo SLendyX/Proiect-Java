@@ -5,6 +5,8 @@ import java.awt.*;
 
 public abstract class PopUp extends JPanel{
     private final JLabel messageLabel;
+    protected final JButton firstBtn;
+    protected final JButton secondBtn;
 
     public PopUp(Runnable firstOption, Runnable secondOption, String firstOptionMessage, String secondOptionMessage) {
         setLayout(new GridBagLayout());
@@ -20,15 +22,16 @@ public abstract class PopUp extends JPanel{
         messageLabel.setFont(new Font("Arial", Font.BOLD, 24));
         messageLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JButton firstBtn = new JButton(firstOptionMessage);
+        firstBtn = new JButton(firstOptionMessage);
         firstBtn.setFont(new Font("Arial", Font.PLAIN, 16));
         firstBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
         firstBtn.addActionListener(e -> {
+            // Daca e multiplayer, putem lasa vizibil pana este acceptat
             setVisible(false);
             firstOption.run();
         });
 
-        JButton secondBtn = new JButton(secondOptionMessage);
+        secondBtn = new JButton(secondOptionMessage);
         secondBtn.setFont(new Font("Arial", Font.PLAIN, 16));
         secondBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
         secondBtn.addActionListener(e -> secondOption.run());
@@ -45,6 +48,14 @@ public abstract class PopUp extends JPanel{
     public void setLabelMessage(String msg){
         messageLabel.setText(msg);
     }
+
+    public void setFirstButtonText(String text) {
+        firstBtn.setText(text);
+        firstBtn.repaint();
+    }
+
+    // Metodă pentru a dezactiva butonul
+    public void setFirstButtonEnabled(boolean enabled) {firstBtn.setEnabled(enabled);}
 
     @Override
     protected void paintComponent(Graphics g){

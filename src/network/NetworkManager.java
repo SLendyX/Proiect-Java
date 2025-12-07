@@ -16,6 +16,8 @@ public class NetworkManager {
     // Mecanism pentru a notifica BoardPanel cand primeste o mutare
     private Consumer<NetworkMove> moveReceivedCallback;
 
+    private Consumer<NetworkGameState> statusReceivedCallback;
+
     public NetworkManager(boolean isHost) {
         this.isHost = isHost;
     }
@@ -23,6 +25,7 @@ public class NetworkManager {
     public void setMoveReceivedCallback(Consumer<NetworkMove> callback) {
         this.moveReceivedCallback = callback;
     }
+    public void setStatusReceivedCallback(Consumer<NetworkGameState> callback) {this.statusReceivedCallback = callback;}
 
     public void start(String ipAddress) throws IOException {
         if (isHost) {
@@ -42,7 +45,7 @@ public class NetworkManager {
         inputStream = new ObjectInputStream(socket.getInputStream());
 
         // Porneste un thread separat pentru a asculta mutari primite
-        new Thread(this::listenForMoves).start();
+        new Thread(this::listenForData).start();
     }
 
     // Trimite mutarea adversarului
@@ -67,8 +70,19 @@ public class NetworkManager {
         }
     }
 
+    public void sendGameStatus(NetworkGameState.StatusType type) {
+        try {
+            NetworkGameState status = new NetworkGameState(type);
+            outputStream.writeObject(status);
+            outputStream.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.err.println("Eroare la trimiterea statusului.");
+        }
+    }
+
     // Ruleaza pe un thread separat si asculta mutari
-    private void listenForMoves() {
+    public void listenForData() {
         try {
             while (socket.isConnected()) {
                 // Asteapta primirea unui obiect (mutare)
@@ -78,6 +92,13 @@ public class NetworkManager {
                     SwingUtilities.invokeLater(() -> {
                         if (moveReceivedCallback != null) {
                             moveReceivedCallback.accept(netMove);
+                        }
+                    });
+                }
+                else if (receivedObject instanceof NetworkGameState netStatus) {
+                    SwingUtilities.invokeLater(() -> {
+                        if (statusReceivedCallback != null) {
+                            statusReceivedCallback.accept(netStatus);
                         }
                     });
                 }
