@@ -1,5 +1,6 @@
 package board;
 
+import AI.StockFish;
 import engine.ChessEngine;
 import engine.GameTimer;
 import engine.Move;
@@ -14,6 +15,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.net.URL;
 import java.util.Map;
 
 import network.NetworkMove;
@@ -32,9 +34,11 @@ public class BoardPanel extends JPanel {
     private GameOverPanel gameOverPanel;
     private MenuPopUp menuPopUp;
     private NetworkManager networkManager;
+    private boolean playingWithAI = false;
     private boolean isMyTurn;
     SidePanel sidePanel;
     int difficultyElo = -1;
+    StockFish stockfish = new StockFish();
 
     public BoardPanel(JFrame parentFrame) {
         setBoardAtributes(parentFrame);
@@ -47,6 +51,18 @@ public class BoardPanel extends JPanel {
 
         boardParam.isReversed = !isWhite;
         this.difficultyElo = difficultyElo;
+
+        playingWithAI = true;
+
+        if(stockfish.startEngine("src/data/ai/stockfish/stockfish-windows-x86-64-avx2.exe", difficultyElo)){
+            System.out.println("Engine started!");
+        }else{
+            System.out.println("Engine failed!");
+        }
+
+        if(chessEngine.getTurn() == boardParam.isReversed){
+            startAITurn();
+        }
     }
 
     public BoardPanel(JFrame parentFrame, NetworkManager networkManager) {
@@ -75,7 +91,6 @@ public class BoardPanel extends JPanel {
         chessEngine.instantiatePieceArray();
         gameTimer = new GameTimer(chessEngine, this);
 
-
         this.sidePanel = new SidePanel(parentFrame);
         this.sidePanel.setChessEngine(chessEngine);
         this.sidePanel.setGameTimer(gameTimer);
@@ -89,7 +104,11 @@ public class BoardPanel extends JPanel {
                     parentFrame.getContentPane().removeAll();
                     parentFrame.add(menu);
 
-                    menu.startGame();
+                    if(playingWithAI)
+                        menu.robotGame();
+                    else{
+                        menu.startGame();
+                    }
                 },
                 () -> {
                 Menu menu = new Menu(parentFrame);
@@ -150,6 +169,14 @@ public class BoardPanel extends JPanel {
     }
 
     private void handleMouseClick(MouseEvent e){
+        if(playingWithAI && boardParam.isReversed == chessEngine.getTurn()){
+            return;
+        }
+
+        if(gameOverPanel.isVisible()){
+            return;
+        }
+
         int cellSize = boardParam.cellSize;
         int margin = boardParam.margin;
         int startX = boardParam.startX;
@@ -199,6 +226,10 @@ public class BoardPanel extends JPanel {
                     }
                     chessEngine.swapSquares(currentMove);
                     chessEngine.switchTurn();
+
+                    if(playingWithAI && chessEngine.getTurn() == boardParam.isReversed && chessEngine.getGameState() == 0){
+                        startAITurn();
+                    }
                 }
 
                 chessEngine.setMovesArray(null);
@@ -234,6 +265,124 @@ public class BoardPanel extends JPanel {
             repaint();
             System.err.println(ex.getMessage());
         }
+    }
+
+    private void startAITurn() {
+
+        new Thread(() -> {
+        // Optional delay for realism
+        try { Thread.sleep(500); } catch (InterruptedException e) { e.printStackTrace(); }
+
+        Move finalMove = null;
+
+        // --- LOGIC FOR LOW ELO ---
+        // 1320 is Stockfish's approximate floor.
+        // If the requested Elo is lower, we must play randomly sometimes.
+        if (difficultyElo < 1320) {
+            System.out.printf("is getting executed for some reason. difficulty: %d%n", difficultyElo);
+
+            // Calculate error chance (0.0 to 1.0)
+            // 250 Elo -> ~90% chance to play randomly
+            // 1320 Elo -> 0% chance to play randomly
+            double blunderChance = 1.0 - (difficultyElo / 1350.0);
+
+            if (Math.random() < blunderChance) {
+                System.out.println("AI is blundering intentionally (Elo " + difficultyElo + ")");
+                // Pick a random legal move from our engine
+                finalMove = chessEngine.getRandomMove(chessEngine.getTurn());
+            }
+        }
+
+        // --- STANDARD STOCKFISH LOGIC ---
+        // If we haven't picked a random move yet, ask Stockfish
+        if (finalMove == null) {
+            // Configure Stockfish to be as weak as possible if Elo is low
+            int engineElo = Math.max(difficultyElo, 1320);
+
+            // Limit depth severely for low Elo (makes it play "shallow" moves)
+            int depth = (difficultyElo < 1500) ? 1 : 20;
+
+            String bestMoveUCI = stockfish.getBestMove(chessEngine.getFenForAI(), depth);
+            finalMove = chessEngine.getMoveFromUCI(bestMoveUCI);
+        }
+
+        if (finalMove != null) {
+                // Handle AI Promotion (using your logic)
+
+                if(!chessEngine.getIsPromoting()){
+                    chessEngine.swapSquares(finalMove);
+                }
+
+                if(chessEngine.getIsPromoting()){
+                    System.out.printf("AI move is promoting! indexAI:%d%n", chessEngine.getPromotionIndexAI());
+
+                    chessEngine.switchPiece(finalMove.moveAuthor(), chessEngine.getPromotionIndexAI());
+                    chessEngine.swapSquares(new Move(finalMove.piecePosition().x, finalMove.piecePosition().y, chessEngine.piecesArray[finalMove.moveAuthor().getPostion().y][finalMove.moveAuthor().getPostion().x]));
+                    chessEngine.setIsPromoting(false);
+                    chessEngine.setPromotingPawn(null);
+                    chessEngine.setPromotionMove(null);
+                }
+
+                chessEngine.switchTurn();
+
+                // 4. Update the UI on the correct thread
+                SwingUtilities.invokeLater(() -> {
+                    repaint();
+
+                    // Check for game over after AI move
+                    if (chessEngine.getGameState() != 0) {
+                        gameTimer.stopTimer();
+                        showGameOverScreen(chessEngine.getGameState());
+                    }
+                });
+            }
+
+    }).start();
+
+
+        // 1. Run in a separate thread to avoid freezing the UI
+//        new Thread(() -> {
+//
+//            // Optional: Small delay so it doesn't move instantly (looks more natural)
+//            try { Thread.sleep(500); } catch (InterruptedException e) { e.printStackTrace(); }
+//
+//            // 2. Heavy Calculation (Stockfish)
+//            // Note: Use your specific method name for getting FEN
+//            String bestMove = stockfish.getBestMove(chessEngine.getFenForAI(), 20);
+//            Move aiMove = chessEngine.getMoveFromUCI(bestMove);
+//
+//            // 3. Update Game State (Must be done carefully)
+//            if (aiMove != null) {
+//                // Handle AI Promotion (using your logic)
+//
+//                if(!chessEngine.getIsPromoting()){
+//                    chessEngine.swapSquares(aiMove);
+//                }
+//
+//                if(chessEngine.getIsPromoting()){
+//                    System.out.printf("AI move is promoting! indexAI:%d%n", chessEngine.getPromotionIndexAI());
+//
+//                    chessEngine.switchPiece(aiMove.moveAuthor(), chessEngine.getPromotionIndexAI());
+//                    chessEngine.swapSquares(new Move(aiMove.piecePosition().x, aiMove.piecePosition().y, chessEngine.piecesArray[aiMove.moveAuthor().getPostion().y][aiMove.moveAuthor().getPostion().x]));
+//                    chessEngine.setIsPromoting(false);
+//                    chessEngine.setPromotingPawn(null);
+//                    chessEngine.setPromotionMove(null);
+//                }
+//
+//                chessEngine.switchTurn();
+//
+//                // 4. Update the UI on the correct thread
+//                SwingUtilities.invokeLater(() -> {
+//                    repaint();
+//
+//                    // Check for game over after AI move
+//                    if (chessEngine.getGameState() != 0) {
+//                        gameTimer.stopTimer();
+//                        showGameOverScreen(chessEngine.getGameState());
+//                    }
+//                });
+//            }
+//        }).start();
     }
 
     @Override
@@ -498,7 +647,7 @@ public class BoardPanel extends JPanel {
         ImageIcon[] images = new ImageIcon[pieces.length];
 
         for(int i=0; i<images.length; i++){
-            java.net.URL imgUrl = getClass().getResource("/data/pieces/" + (pawn.isWhite() ? "white" : "black") + "/" + pieces[i] + ".png");
+            URL imgUrl = getClass().getResource("/data/pieces/" + (pawn.isWhite() ? "white" : "black") + "/" + pieces[i] + ".png");
             if (imgUrl != null) {
                 images[i] = new ImageIcon(imgUrl);
             }
@@ -537,7 +686,12 @@ public class BoardPanel extends JPanel {
                     chessEngine.setPromotionMove(null);
                     chessEngine.switchTurn();
 
+                    if(playingWithAI && chessEngine.getTurn() == boardParam.isReversed && chessEngine.getGameState() == 0){
+                        startAITurn();
+                    }
+
                     removeAll();
+
                     repaint();
                 }
             });

@@ -22,7 +22,7 @@ public class Menu extends JPanel {
 
         // NOU: ÎNCARCĂ IMAGINEA
         try {
-            URL imageUrl = getClass().getResource("/data/background/shaw.png");
+            URL imageUrl = getClass().getResource("/data/background/shawty.png");
             if (imageUrl != null) {
                 this.backgroundImage = new ImageIcon(imageUrl).getImage();
             } else {
@@ -102,7 +102,7 @@ public class Menu extends JPanel {
         board.requestFocusInWindow();
     }
 
-    private void robotGame() {
+    public void robotGame() {
         parentFrame.getContentPane().removeAll();
         AIMenu aiMenu = new AIMenu(parentFrame,this);
         parentFrame.add(aiMenu);

@@ -100,17 +100,7 @@ public class AIMenu extends JPanel {
         add(colorPanel, gbc);
 
         // --- 5. Start AI Game Button ---
-        JButton startGameButton = new JButton("Start AI Game");
-        startGameButton.setPreferredSize(new Dimension(250, 50));
-        startGameButton.setFont(new Font("SansSerif", Font.PLAIN, 20));
-
-        startGameButton.addActionListener(e -> {
-            int selectedElo = difficultySlider.getValue();
-            boolean selectedColor = getSelectedColor();
-
-            System.out.println("Starting AI game. ELO: " + selectedElo + ", Color: " + selectedColor);
-            startAIGame(selectedElo, selectedColor);
-        });
+        JButton startGameButton = getJButton();
 
         gbc.gridy = 4; // Shifted down
         gbc.insets = new Insets(15, 15, 15, 15);
@@ -127,6 +117,21 @@ public class AIMenu extends JPanel {
 
         gbc.gridy = 5; // Shifted down
         add(backButton, gbc);
+    }
+
+    private JButton getJButton() {
+        JButton startGameButton = new JButton("Start AI Game");
+        startGameButton.setPreferredSize(new Dimension(250, 50));
+        startGameButton.setFont(new Font("SansSerif", Font.PLAIN, 20));
+
+        startGameButton.addActionListener(e -> {
+            int selectedElo = difficultySlider.getValue();
+            boolean selectedColor = getSelectedColor();
+
+            System.out.println("Starting AI game. ELO: " + selectedElo + ", Color: " + selectedColor);
+            startAIGame(selectedElo, selectedColor);
+        });
+        return startGameButton;
     }
 
     // Helper to create styled toggle buttons with images

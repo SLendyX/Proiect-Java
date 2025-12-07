@@ -12,9 +12,10 @@ import java.util.*;
 public class ChessEngine {
     //    String defaultFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 //    "k7/8/8/8/8/8/8/3NK3"
+//    "KQkq"
     BoardParameters boardParam;
-    String defaultFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
-    String castleFen = "KQkq";
+    String defaultFen = "4k3/8/8/8/8/8/p/7K";
+    String castleFen = "-";
     Map<String, Integer> positionMap = new HashMap<>();
 
     boolean isPromoting = false;
@@ -29,6 +30,7 @@ public class ChessEngine {
     private boolean whiteResigned = false;
     private boolean blackResigned = false;
     private boolean drawAgreed = false;
+    private int promotionIndexAI = -1;
 
     private final Clip moveSound;
     private final Clip captureSound;
@@ -371,6 +373,27 @@ public class ChessEngine {
         return fen.toString();
     }
 
+    public String getFenForAI(){
+        StringBuilder fen = new StringBuilder();
+        fen.append(getCurrentFen()).append(" ");
+        fen.append(getTurn() ? "w" : "b").append(" ");
+        fen.append(castleFen).append(" ");
+
+        if(enPassantPawn == null){
+            fen.append("-");
+        }else{
+            fen.append(getChessCoords(enPassantPawn.getPostion(), boardParam.isReversed));
+        }
+        fen.append(" ");
+
+        fen.append(halfMoveClock).append(" ");
+        fen.append(halfMoveClock/2);
+
+        return fen.toString();
+    }
+
+
+
     public void updatePositions(){
         String key = getFullFen();
         int counter = positionMap.get(key) == null ? 1 : positionMap.get(key) + 1;
@@ -409,6 +432,58 @@ public class ChessEngine {
         return getChessCoords(x, y, isReversed);
     }
 
+    public Move getMoveFromUCI(String uciMove) {
+        // 1. Parse Start Coordinate (e.g., "e2")
+        int fromX = uciMove.charAt(0) - 'a'; // 'e' -> 4
+        // Convert rank '2' to index 6 (because your row 0 is rank 8)
+        int fromY = 8 - (uciMove.charAt(1) - '0');
+
+        // 2. Parse Destination Coordinate (e.g., "e4")
+        int toX = uciMove.charAt(2) - 'a';
+        int toY = 8 - (uciMove.charAt(3) - '0');
+
+        // 3. Retrieve the Piece from your board array
+        Piece movingPiece = piecesArray[fromY][fromX];
+
+        // Safety check (shouldn't happen if engine is synced)
+        if (movingPiece == null) {
+            System.err.println("Error: Stockfish tried to move from " + uciMove + " but square is empty.");
+            return null;
+        }
+
+        // 4. Detect Special Move Attributes for your Move Record
+        Piece targetPiece = piecesArray[toY][toX];
+        boolean isCapture = (targetPiece != null);
+
+        // Check Castling (King moves 2 squares)
+        boolean isCastle = (movingPiece instanceof King) && Math.abs(fromX - toX) == 2;
+
+        if(isCastle){
+            setCastledKing((King) movingPiece);
+        }
+
+        // Check En Passant (Pawn moves diagonally to empty square)
+        boolean isEnPassant = (movingPiece instanceof Pawn)
+                && (fromX != toX)
+                && (targetPiece == null);
+
+        // 5. Handle Promotion (UCI string length is 5, e.g., "a7a8q")
+        if (uciMove.length() == 5) {
+            String promotions = "qrbn";
+
+            setPromotionIndexAI(promotions.indexOf(uciMove.charAt(4)));
+
+            this.setIsPromoting(true);
+            this.setPromotingPawn(movingPiece);
+        }
+
+        Rook castleRook = isCastle ? (Rook) (fromX - toX < 0 ? piecesArray[fromY][7] : piecesArray[fromY][0]) : null;
+
+        // 6. Return your custom Move object
+        return new Move(toX, toY, movingPiece, isCapture, isEnPassant, isCastle, castleRook);
+    }
+
+
     public boolean canPromote(Piece pawn){
         int posY = pawn.getPostion().y;
         boolean isWhite = pawn.isWhite();
@@ -419,6 +494,8 @@ public class ChessEngine {
 
         return !isWhite && (posY == 6);
     }
+
+
 
     public void switchPiece(Piece pawn, int choice) {
         System.out.println("Can promote pawn");
@@ -595,6 +672,40 @@ public class ChessEngine {
         return legal.toArray(new Move[0]);
     }
 
+    public Move getRandomMove(boolean isWhite) {
+        List<Move> allLegalMoves = new ArrayList<>();
+
+        // 1. Loop through all pieces
+        for (int row = 0; row < 8; row++) {
+            for (int col = 0; col < 8; col++) {
+                Piece p = piecesArray[row][col];
+
+                // 2. If it's the AI's piece, get its legal moves
+                if (p != null && p.isWhite() == isWhite) {
+                    Move[] moves = filterLegalMoves(p, piecesArray);
+                    allLegalMoves.addAll(Arrays.asList(moves));
+                }
+            }
+        }
+
+        // 3. Return a random one
+        if (!allLegalMoves.isEmpty()) {
+            Move randomMove = allLegalMoves.get(new Random().nextInt(allLegalMoves.size()));
+
+            if(randomMove.moveAuthor() instanceof Pawn && (randomMove.piecePosition().y == 0 || randomMove.piecePosition().y == 7)){
+                Random random = new Random();
+
+                setPromotionIndexAI(random.nextInt(4));
+
+                this.setIsPromoting(true);
+                this.setPromotingPawn(randomMove.moveAuthor());
+            }
+
+            return randomMove;
+        }
+        return null;
+    }
+
     public PiecePosition getKingPos(Piece[][] board, boolean turn){
         int kingX = -1;
         int kingY = -1;
@@ -744,4 +855,11 @@ public class ChessEngine {
         return this.gameState;
     }
 
+    public int getPromotionIndexAI() {
+        return promotionIndexAI;
+    }
+
+    public void setPromotionIndexAI(int promotionIndexAI) {
+        this.promotionIndexAI = promotionIndexAI;
+    }
 }
