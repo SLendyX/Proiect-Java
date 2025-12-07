@@ -6,59 +6,70 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 
 public class SidePanel extends JPanel {
-    private final ChessEngine engine;
+    private ChessEngine engine;
     private GameTimer gameTimer;
     private final JFrame parentFrame;
 
-    private final JLabel whiteTimerLabel;
-    private final JLabel blackTimerLabel;
+    // Referințe pentru a putea modifica fontul dinamic
+    private JLabel whiteTimerLabel;
+    private JLabel whiteNameLabel;
+    private JLabel blackTimerLabel;
+    private JLabel blackNameLabel;
+
     private Timer uiUpdateTimer;
 
     private final JButton btnResign;
     private final JButton btnDraw;
-    private final JButton btnBackToMenu;
 
     public void setGameTimer(GameTimer gameTimer) {
         this.gameTimer = gameTimer;
     }
 
-
-    public SidePanel(ChessEngine engine, GameTimer gameTimer, JFrame parentFrame, Runnable returnToMenuCallback) {
+    public void setChessEngine(ChessEngine engine){
         this.engine = engine;
-        this.gameTimer = gameTimer;
+    }
+
+    public SidePanel(JFrame parentFrame) {
+        this.engine = null;
+        this.gameTimer = null;
         this.parentFrame = parentFrame;
 
-        // Culoarea fundalului similară cu tabla (sau chiar culoarea background-ului aplicației)
+        // Culoarea fundalului
         this.setBackground(new Color(50, 50, 50));
         this.setLayout(new GridBagLayout());
-        this.setPreferredSize(new Dimension(200, 0));
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 0;
-        gbc.insets = new Insets(10, 10, 10, 10);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0; // Permite componentelor să se lățească
+        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.fill = GridBagConstraints.HORIZONTAL; // Umple pe orizontală
+        gbc.insets = new Insets(10, 10, 10, 10); // Margini procentuale ar fi ideale, dar fixe e ok
 
         // --- TIMER BLACK ---
-        JPanel blackPanel = createTimerPanel("Black", new Color(181, 136, 99)); // Culoare piesa neagra/inchisa
-        blackTimerLabel = (JLabel) blackPanel.getComponent(1); // Luam label-ul sa-l updatam
+        // Salvăm referințele direct la creare
+        JPanel blackPanel = createTimerPanel("Black", new Color(181, 136, 99), false);
         add(blackPanel, gbc);
 
         // --- SPACE ---
         gbc.gridy++;
-        add(Box.createVerticalStrut(20), gbc);
+        // Folosim weight-y pentru a împinge elementele, spațiul devine flexibil
+
+        add(Box.createGlue(), gbc);
 
         // --- TIMER WHITE ---
-        JPanel whitePanel = createTimerPanel("White", new Color(240, 217, 181)); // Culoare piesa alba/deschisa
-        whiteTimerLabel = (JLabel) whitePanel.getComponent(1);
+        JPanel whitePanel = createTimerPanel("White", new Color(240, 217, 181), true);
         add(whitePanel, gbc);
 
-        // --- BUTTONS ---
+        // --- SPACE ---
         gbc.gridy++;
-        add(Box.createVerticalStrut(30), gbc); // Spațiu mai mare
+        add(Box.createGlue(), gbc);
 
+        // --- BUTTONS ---
         btnDraw = createClassicButton("Propose Draw");
         add(btnDraw, gbc);
 
@@ -66,35 +77,44 @@ public class SidePanel extends JPanel {
         btnResign = createClassicButton("Resign");
         add(btnResign, gbc);
 
-        gbc.gridy++;
-        btnBackToMenu = createClassicButton("Back to Menu");
-        btnBackToMenu.setVisible(false);
-        btnBackToMenu.addActionListener(e -> returnToMenuCallback.run());
-        add(btnBackToMenu, gbc);
-
-        // Actions
+        // Listeners
         btnDraw.addActionListener(e -> askForDraw());
         btnResign.addActionListener(e -> resignGame());
 
-        // Pornim un timer de UI care doar reimprospateaza label-urile la fiecare 100ms
-        // Nu afecteaza logica jocului, doar afisarea
+        // --- RESPONSIVENESS ---
+        // Adăugăm un listener care recalculează fonturile când se redimensionează fereastra
+        this.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                resizeFonts();
+            }
+        });
+
         startUIUpdateLoop();
     }
 
-    private JPanel createTimerPanel(String playerName, Color bgColor) {
+    // Metodă modificată pentru a salva referințele corecte
+    private JPanel createTimerPanel(String playerName, Color bgColor, boolean isWhite) {
         JPanel p = new JPanel(new BorderLayout());
         p.setBackground(bgColor);
         p.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 2));
 
         JLabel nameLbl = new JLabel(playerName, SwingConstants.CENTER);
-        nameLbl.setFont(new Font("SansSerif", Font.BOLD, 14));
         nameLbl.setForeground(Color.BLACK);
         nameLbl.setBorder(BorderFactory.createEmptyBorder(5,0,0,0));
 
         JLabel timeLbl = new JLabel("00:00", SwingConstants.CENTER);
-        timeLbl.setFont(new Font("Monospaced", Font.BOLD, 24));
         timeLbl.setForeground(Color.BLACK);
         timeLbl.setBorder(BorderFactory.createEmptyBorder(5,0,5,0));
+
+        // Salvăm referințele în câmpurile clasei
+        if (isWhite) {
+            this.whiteNameLabel = nameLbl;
+            this.whiteTimerLabel = timeLbl;
+        } else {
+            this.blackNameLabel = nameLbl;
+            this.blackTimerLabel = timeLbl;
+        }
 
         p.add(nameLbl, BorderLayout.NORTH);
         p.add(timeLbl, BorderLayout.CENTER);
@@ -103,33 +123,82 @@ public class SidePanel extends JPanel {
 
     private JButton createClassicButton(String text) {
         JButton btn = new JButton(text);
-        btn.setFont(new Font("SansSerif", Font.BOLD, 14));
         btn.setBackground(Color.LIGHT_GRAY);
-        btn.setFocusable(false); // CRUCIAL pentru tasta ESC
+        btn.setFocusable(false);
         return btn;
+    }
+
+    // --- LOGICA DE SCALARE ---
+    private void resizeFonts() {
+        int width = getWidth();
+        int height = getHeight();
+
+        // Evităm erori la inițializare când dimensiunea e 0
+        if (width == 0 || height == 0) return;
+
+        // Calculăm o mărime de bază în funcție de lățimea panoului
+        // De exemplu: vrem ca fontul să fie cam 1/15 din lățime pentru text normal
+        int baseFontSize = Math.max(12, width / 15);
+        int timerFontSize = Math.max(16, width / 9);
+
+        Font nameFont = new Font("SansSerif", Font.BOLD, baseFontSize);
+        Font timeFont = new Font("Monospaced", Font.BOLD, timerFontSize);
+        Font btnFont = new Font("SansSerif", Font.BOLD, baseFontSize);
+
+        // Aplicăm noile fonturi
+        if(whiteNameLabel != null) whiteNameLabel.setFont(nameFont);
+        if(blackNameLabel != null) blackNameLabel.setFont(nameFont);
+
+        if(whiteTimerLabel != null) whiteTimerLabel.setFont(timeFont);
+        if(blackTimerLabel != null) blackTimerLabel.setFont(timeFont);
+
+        if(btnDraw != null) btnDraw.setFont(btnFont);
+        if(btnResign != null) btnResign.setFont(btnFont);
+
+        // Forțăm redesenarea componentelor interne
+        revalidate();
+        repaint();
     }
 
     private void startUIUpdateLoop() {
         uiUpdateTimer = new Timer(100, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                // Luam timpul din obiectul GameTimer existent
-                long whiteTime = gameTimer.getTimeWhite();
-                long blackTime = gameTimer.getTimeBlack();
+                if (gameTimer != null) {
+                    long whiteTime = gameTimer.getTimeWhite();
+                    long blackTime = gameTimer.getTimeBlack();
+                    whiteTimerLabel.setText(formatTime(whiteTime));
+                    blackTimerLabel.setText(formatTime(blackTime));
+                }
 
-                whiteTimerLabel.setText(formatTime(whiteTime));
-                blackTimerLabel.setText(formatTime(blackTime));
-
-                // Daca jocul s-a terminat, oprim update-ul vizual si afisam butonul de meniu
                 if (engine.isGameOver()) {
                     uiUpdateTimer.stop();
-                    btnBackToMenu.setVisible(true);
                     btnResign.setEnabled(false);
                     btnDraw.setEnabled(false);
+                    triggerBoardGameOver();
                 }
             }
         });
         uiUpdateTimer.start();
+    }
+
+    private void triggerBoardGameOver() {
+        for (Component comp : parentFrame.getContentPane().getComponents()) {
+            // Căutăm recursiv dacă e într-un wrapper
+            if (comp instanceof BoardPanel) {
+                ((BoardPanel) comp).showGameOverScreen(engine.getGameState());
+                return;
+            } else if (comp instanceof Container) {
+                // Caz special pentru că acum avem un container wrapper în Menu
+                for(Component child : ((Container)comp).getComponents()){
+                    if(child instanceof BoardPanel){
+                        ((BoardPanel) child).showGameOverScreen(engine.getGameState());
+                        return;
+                    }
+                }
+            }
+        }
+        parentFrame.repaint();
     }
 
     private String formatTime(long millis) {
@@ -144,8 +213,7 @@ public class SidePanel extends JPanel {
         int response = JOptionPane.showConfirmDialog(parentFrame, "Are you sure you want to resign?", "Confirm Resign", JOptionPane.YES_NO_OPTION);
         if (response == JOptionPane.YES_OPTION) {
             engine.resign();
-            gameTimer.stopTimer(); // Oprim timerul logic
-            parentFrame.repaint();
+            if(gameTimer != null) gameTimer.stopTimer();
         }
     }
 
@@ -154,8 +222,7 @@ public class SidePanel extends JPanel {
         int response = JOptionPane.showConfirmDialog(parentFrame, "Opponent offers a draw. Accept?", "Draw Offer", JOptionPane.YES_NO_OPTION);
         if (response == JOptionPane.YES_OPTION) {
             engine.agreeDraw();
-            gameTimer.stopTimer();
-            parentFrame.repaint();
+            if(gameTimer != null) gameTimer.stopTimer();
         }
     }
 }

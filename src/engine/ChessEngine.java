@@ -26,6 +26,9 @@ public class ChessEngine {
     boolean isChecked;
     int gameState;
     private int halfMoveClock = 0;
+    private boolean whiteResigned = false;
+    private boolean blackResigned = false;
+    private boolean drawAgreed = false;
 
     private final Clip moveSound;
     private final Clip captureSound;
@@ -616,15 +619,19 @@ public class ChessEngine {
 
     public void resign() {
         if (turn) {
-            this.gameState = 9;
+            whiteResigned = true;
         } else {
-            this.gameState = 10;
+            blackResigned = true;
         }
+        System.out.println("W = " + whiteResigned + " B = " + blackResigned);
+        setGameState(turn);
         playEndSound();
     }
 
     public void agreeDraw() {
-        this.gameState = 11;
+        drawAgreed = true;
+        setGameState(turn);
+        System.out.println("Draw?: " + drawAgreed);
         playEndSound();
     }
 
@@ -633,6 +640,15 @@ public class ChessEngine {
     }
 
     public int calculateGameState(boolean turn) {
+        if (whiteResigned) {
+            return 9;
+        }
+        if (blackResigned) {
+            return 10;
+        }
+        if (drawAgreed) {
+            return 11;
+        }
         if(hasInsufficientMaterial()){
             return 6;
         }else if(halfMoveClock >= 100){
@@ -678,7 +694,9 @@ public class ChessEngine {
         this.isChecked = false;
         this.halfMoveClock = 0;
         this.gameState = 0;
-
+        this.whiteResigned = false;
+        this.blackResigned = false;
+        this.drawAgreed = false;
         instantiatePieceArray(defaultFen);
     }
 

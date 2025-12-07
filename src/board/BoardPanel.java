@@ -8,6 +8,7 @@ import network.NetworkManager;
 import pieces.Piece;
 
 import javax.swing.*;
+import javax.swing.border.*;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
@@ -26,18 +27,26 @@ public class BoardPanel extends JPanel {
     BoardParameters boardParam;
     private static final double MOVE_INDICATOR_SIZE_RATIO = 13.0/36.0;
     private static final double CAPTURE_INDICATOR_SIZE_RATIO = 0.935;
+    private static final double SIDE_PANEL_RATIO =  1.5/8.0;
     private GameTimer gameTimer;
     private GameOverPanel gameOverPanel;
     private MenuPopUp menuPopUp;
     private NetworkManager networkManager;
     private boolean isMyTurn;
     SidePanel sidePanel;
+    int difficultyElo = -1;
 
-    public BoardPanel(JFrame parentFrame, SidePanel sidePanel) {
+    public BoardPanel(JFrame parentFrame) {
         setBoardAtributes(parentFrame);
-        this.sidePanel = sidePanel;
-        this.sidePanel.setGameTimer(gameTimer);
         this.isMyTurn = true;
+    }
+
+    public BoardPanel(JFrame parentFrame, boolean isWhite, int difficultyElo) {
+        setBoardAtributes(parentFrame);
+        this.isMyTurn = true;
+
+        boardParam.isReversed = !isWhite;
+        this.difficultyElo = difficultyElo;
     }
 
     public BoardPanel(JFrame parentFrame, NetworkManager networkManager) {
@@ -56,7 +65,6 @@ public class BoardPanel extends JPanel {
         chessEngine.playStartSound();
         this.setLayout(null);
         boardParam = new BoardParameters();
-
         boardParam.setBoardColors(
                 new Color(223, 222, 222),
                 new Color(181, 136, 99),
@@ -66,6 +74,12 @@ public class BoardPanel extends JPanel {
         chessEngine.setBoardParams(boardParam);
         chessEngine.instantiatePieceArray();
         gameTimer = new GameTimer(chessEngine, this);
+
+
+        this.sidePanel = new SidePanel(parentFrame);
+        this.sidePanel.setChessEngine(chessEngine);
+        this.sidePanel.setGameTimer(gameTimer);
+        add(sidePanel);
 
         gameOverPanel = new GameOverPanel(
                 () -> {
@@ -129,7 +143,7 @@ public class BoardPanel extends JPanel {
     }
 
     private void handleKeyPress(KeyEvent e){
-        if(e.getKeyCode() == KeyEvent.VK_ESCAPE){
+        if(e.getKeyCode() == KeyEvent.VK_ESCAPE && !gameOverPanel.isVisible()){
             gameTimer.togglePause();
             showMenuPopUp(!menuPopUp.isVisible());
         }
@@ -238,8 +252,8 @@ public class BoardPanel extends JPanel {
             case 6 -> message = "Draw, insufficient material";
             case 7 -> message = "Draw.";
             case 8 -> message = "Draw by repetition!";
-            case 9 -> message = "White resigned";
-            case 10 -> message = "Black resigned";
+            case 9 -> message = "White resigned. Black Wins!";
+            case 10 -> message = "Black resigned. White Wins!";
             case 11 -> message = "Draw by agreement";
         }
 
@@ -261,7 +275,8 @@ public class BoardPanel extends JPanel {
 
     public void printGame(Graphics g){
         int boardSize = min(getWidth(), getHeight());
-        int startX = (getWidth()-boardSize)/2;
+        int sidePanelWidth = (int) (boardSize *  SIDE_PANEL_RATIO);
+        int startX = (getWidth()-boardSize-sidePanelWidth)/2;
         int startY = (getHeight() - boardSize) / 2;
         int margin = boardSize*7/100;
         int cellSize = (boardSize-margin)/8;
@@ -285,11 +300,16 @@ public class BoardPanel extends JPanel {
         );
 
         printPieces(g, boardParam, chessEngine.piecesArray);
-        printTimer(g, boardParam);
+//        printTimer(g, boardParam);
+
+        sidePanel.setBounds(startX + boardSize,0, sidePanelWidth, getHeight());
 
         printMoves(chessEngine.getMovesArray(), g, boardParam);
 
         printPromotionPanel(boardParam, chessEngine.getIsPromoting(), chessEngine.getPromotingPawn());
+
+        gameOverPanel.setBounds(0,0, getWidth(), getHeight());
+        menuPopUp.setBounds(0,0, getWidth(), getHeight());
     }
 
     public void printBoard(Graphics g, BoardParameters boardParam){

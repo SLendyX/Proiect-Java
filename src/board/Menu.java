@@ -9,6 +9,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.net.URL;
 
+import static java.lang.Math.min;
+
 
 public class Menu extends JPanel {
     private final JFrame parentFrame;
@@ -90,12 +92,11 @@ public class Menu extends JPanel {
 
     public void startGame(){
         parentFrame.getContentPane().removeAll();
-        parentFrame.setLayout(new BorderLayout());
-        ChessEngine engine = new ChessEngine();
-        SidePanel sidePanel = new SidePanel(engine, null, parentFrame, this::showMenu);
-        BoardPanel board = new BoardPanel(parentFrame, sidePanel);
+        parentFrame.setLayout(new BorderLayout()); // Use GridBagLayout, NOT BorderLayout
+
+        BoardPanel board = new BoardPanel(parentFrame);
         parentFrame.add(board, BorderLayout.CENTER);
-        parentFrame.add(sidePanel, BorderLayout.EAST);
+
         parentFrame.revalidate();
         parentFrame.repaint();
         board.requestFocusInWindow();
