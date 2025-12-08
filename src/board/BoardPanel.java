@@ -55,7 +55,7 @@ public class BoardPanel extends JPanel {
 
         playingWithAI = true;
 
-        if(stockfish.startEngine("src/data/ai/stockfish/stockfish-windows-x86-64-avx2.exe", difficultyElo)){
+        if(stockfish.startEngine(difficultyElo)){
             System.out.println("Engine started!");
         }else{
             System.out.println("Engine failed!");
@@ -240,6 +240,7 @@ public class BoardPanel extends JPanel {
 
 
                 if(chessEngine.getGameState() != 0){
+                    stockfish.stopEngine();
                     gameTimer.stopTimer();
                     showGameOverScreen(chessEngine.getGameState());
                 }
@@ -303,7 +304,7 @@ public class BoardPanel extends JPanel {
             int engineElo = Math.max(difficultyElo, 1320);
 
             // Limit depth severely for low Elo (makes it play "shallow" moves)
-            int depth = (difficultyElo < 1500) ? 1 : 20;
+            int depth = (engineElo < 1500) ? 1 : 20;
 
             String bestMoveUCI = stockfish.getBestMove(chessEngine.getFenForAI(), depth);
             finalMove = chessEngine.getMoveFromUCI(bestMoveUCI);
@@ -334,58 +335,14 @@ public class BoardPanel extends JPanel {
 
                     // Check for game over after AI move
                     if (chessEngine.getGameState() != 0) {
+                        stockfish.stopEngine();
                         gameTimer.stopTimer();
                         showGameOverScreen(chessEngine.getGameState());
                     }
                 });
             }
 
-    }).start();
-
-
-        // 1. Run in a separate thread to avoid freezing the UI
-//        new Thread(() -> {
-//
-//            // Optional: Small delay so it doesn't move instantly (looks more natural)
-//            try { Thread.sleep(500); } catch (InterruptedException e) { e.printStackTrace(); }
-//
-//            // 2. Heavy Calculation (Stockfish)
-//            // Note: Use your specific method name for getting FEN
-//            String bestMove = stockfish.getBestMove(chessEngine.getFenForAI(), 20);
-//            Move aiMove = chessEngine.getMoveFromUCI(bestMove);
-//
-//            // 3. Update Game State (Must be done carefully)
-//            if (aiMove != null) {
-//                // Handle AI Promotion (using your logic)
-//
-//                if(!chessEngine.getIsPromoting()){
-//                    chessEngine.swapSquares(aiMove);
-//                }
-//
-//                if(chessEngine.getIsPromoting()){
-//                    System.out.printf("AI move is promoting! indexAI:%d%n", chessEngine.getPromotionIndexAI());
-//
-//                    chessEngine.switchPiece(aiMove.moveAuthor(), chessEngine.getPromotionIndexAI());
-//                    chessEngine.swapSquares(new Move(aiMove.piecePosition().x, aiMove.piecePosition().y, chessEngine.piecesArray[aiMove.moveAuthor().getPostion().y][aiMove.moveAuthor().getPostion().x]));
-//                    chessEngine.setIsPromoting(false);
-//                    chessEngine.setPromotingPawn(null);
-//                    chessEngine.setPromotionMove(null);
-//                }
-//
-//                chessEngine.switchTurn();
-//
-//                // 4. Update the UI on the correct thread
-//                SwingUtilities.invokeLater(() -> {
-//                    repaint();
-//
-//                    // Check for game over after AI move
-//                    if (chessEngine.getGameState() != 0) {
-//                        gameTimer.stopTimer();
-//                        showGameOverScreen(chessEngine.getGameState());
-//                    }
-//                });
-//            }
-//        }).start();
+        }).start();
     }
 
     @Override
@@ -709,26 +666,6 @@ public class BoardPanel extends JPanel {
         promotionContainer.requestFocusInWindow();
 
         repaint();
-    }
-
-    public void printTimer(Graphics g, BoardParameters boardParam){
-        int cellSize = boardParam.cellSize;
-        int fontSize = max(10, cellSize/5);
-        Font font = new Font("Arial", Font.BOLD, fontSize);
-
-        g.setFont(font);
-        g.setColor(new Color(1,1,1));
-
-
-        String timpPlayer1 = formatTime(gameTimer.getTimeWhite());
-        String timpPlayer2 = formatTime(gameTimer.getTimeBlack());
-        int xtimpPlayer1 = boardParam.startX + boardParam.boardSize + boardParam.margin;
-        int ytimpPlayer1  = boardParam.startY + boardParam.boardSize/2 + cellSize;
-        int xtimpPlayer2  = boardParam.startX + boardParam.boardSize + boardParam.margin;
-        int ytimpPlayer2 = boardParam.startY + boardParam.boardSize/2;
-
-        g.drawString(timpPlayer1, xtimpPlayer1, ytimpPlayer1);
-        g.drawString(timpPlayer2, xtimpPlayer2, ytimpPlayer2);
     }
 
     private String formatTime(long millis) {

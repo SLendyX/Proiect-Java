@@ -6,20 +6,30 @@ public class StockFish {
     private Process process;
     private volatile BufferedReader reader;
     private BufferedWriter writer;
-    private System = new
 
-    /**
-     * Starts the Stockfish engine.
-     * @param path The absolute or relative path to the Stockfish executable.
-     * @return true if started successfully, false otherwise.
-     */
+    public String getEnginePath(){
+        String os = System.getProperty("os.name").toLowerCase();
+        String basePath = "src/data/ai/stockfish/";
 
-    public boolean startEngine(String path, int difficulty) {
+        if (os.contains("win")) {
+            return basePath + "windows/stockfish-windows-x86-64-avx2.exe";
+        } else if (os.contains("mac")) {
+            return basePath + "macos/stockfish-macos-m1-apple-silicon";
+        } else if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
+            return basePath + "linux/stockfish-ubuntu-x86-64-avx2";
+        } else {
+            System.err.println("Sistem de operare necunoscut: " + os);
+            return null;
+        }
+    }
+
+    public boolean startEngine(int difficulty) {
         try {
-            ProcessBuilder builder = new ProcessBuilder(path);
+            ProcessBuilder builder = new ProcessBuilder(getEnginePath());
 
             System.out.println(builder.directory());
 
+            setElo(difficulty);
 
             this.process = builder.start();
             this.reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -48,14 +58,6 @@ public class StockFish {
             e.printStackTrace();
         }
     }
-
-    /**
-     * Asks Stockfish for the best move for a given FEN position.
-     * This is blocking; consider running in a separate thread.
-     * * @param fen The board position in FEN format.
-     * @param depth Search depth (e.g., 10-20).
-     * @return The best move string (e.g., "e2e4").
-     */
 
     public void setElo(int difficulty){
         sendCommand("setoption name UCI_LimitStrength value true");

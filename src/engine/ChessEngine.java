@@ -14,8 +14,8 @@ public class ChessEngine {
 //    "k7/8/8/8/8/8/8/3NK3"
 //    "KQkq"
     BoardParameters boardParam;
-    String defaultFen = "4k3/8/8/8/8/8/p7/7K";
-    String castleFen = "-";
+    String defaultFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+    String castleFen = "KQkq";
     Map<String, Integer> positionMap = new HashMap<>();
 
     boolean isPromoting = false;
