@@ -160,7 +160,8 @@ public class SidePanel extends JPanel {
         repaint();
     }
 
-    private void startUIUpdateLoop() {
+    void startUIUpdateLoop() {
+        System.out.println("gets here");
         uiUpdateTimer = new Timer(100, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {

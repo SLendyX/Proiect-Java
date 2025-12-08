@@ -6,6 +6,7 @@ public class StockFish {
     private Process process;
     private volatile BufferedReader reader;
     private BufferedWriter writer;
+    private System = new
 
     /**
      * Starts the Stockfish engine.

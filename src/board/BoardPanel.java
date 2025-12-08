@@ -39,6 +39,7 @@ public class BoardPanel extends JPanel {
     SidePanel sidePanel;
     int difficultyElo = -1;
     StockFish stockfish = new StockFish();
+    JPanel promotionContainer;
 
     public BoardPanel(JFrame parentFrame) {
         setBoardAtributes(parentFrame);
@@ -215,6 +216,8 @@ public class BoardPanel extends JPanel {
                     chessEngine.setIsPromoting(true);
                     chessEngine.setPromotingPawn(piece);
                     chessEngine.setPromotionMove(currentMove);
+
+                    printPromotionPanel(boardParam, chessEngine.getIsPromoting(), chessEngine.getPromotingPawn());
                 }else{
                     if(chessEngine.getCurrentFen().equals(chessEngine.getDefaultFen())){
                         gameTimer.startTimer();
@@ -249,7 +252,7 @@ public class BoardPanel extends JPanel {
                     chessEngine.setIsPromoting(false);
                     chessEngine.setPromotingPawn(null);
                     chessEngine.setPromotionMove(null);
-                    removeAll();
+                    remove(this.promotionContainer);
                 }
                 System.out.println(chessEngine.getMovesArray().size());
                 repaint();
@@ -260,7 +263,7 @@ public class BoardPanel extends JPanel {
                 chessEngine.setIsPromoting(false);
                 chessEngine.setPromotingPawn(null);
                 chessEngine.setPromotionMove(null);
-                removeAll();
+                remove(this.promotionContainer);
             }
             repaint();
             System.err.println(ex.getMessage());
@@ -455,8 +458,6 @@ public class BoardPanel extends JPanel {
 
         printMoves(chessEngine.getMovesArray(), g, boardParam);
 
-        printPromotionPanel(boardParam, chessEngine.getIsPromoting(), chessEngine.getPromotingPawn());
-
         gameOverPanel.setBounds(0,0, getWidth(), getHeight());
         menuPopUp.setBounds(0,0, getWidth(), getHeight());
     }
@@ -634,19 +635,22 @@ public class BoardPanel extends JPanel {
             }
         });
     }
+
     public void printPromotionPanel(BoardParameters boardParam, boolean isVisible, Piece pawn) {
-        if(!isVisible || pawn == null){
-//            System.out.println("Deleting panel");
-            return ;
+        if (!isVisible || pawn == null) {
+            return;
         }
 
+        JPanel promotionContainer = new JPanel();
+        promotionContainer.setLayout(null); // Folosim null layout pentru poziționare absolută (cum ai tu deja calculat)
+        promotionContainer.setBounds(0, 0, getWidth(), getHeight()); // Să acopere tot BoardPanel-ul
+        promotionContainer.setOpaque(false); // Transparent, ca să se vadă tabla sub el
+
         int cellSize = boardParam.cellSize;
-
         String[] pieces = {"queen", "rook", "bishop", "knight"};
-
         ImageIcon[] images = new ImageIcon[pieces.length];
 
-        for(int i=0; i<images.length; i++){
+        for (int i = 0; i < images.length; i++) {
             URL imgUrl = getClass().getResource("/data/pieces/" + (pawn.isWhite() ? "white" : "black") + "/" + pieces[i] + ".png");
             if (imgUrl != null) {
                 images[i] = new ImageIcon(imgUrl);
@@ -660,43 +664,51 @@ public class BoardPanel extends JPanel {
         int startY = boardParam.startY;
         int margin = boardParam.margin;
 
-//        g.setColor(new Color(73,54,87));
         for (int i = 0; i <= 3; i++) {
-            JButton button = new JButton(new ImageIcon(images[i].getImage().getScaledInstance(cellSize/2, cellSize/2, Image.SCALE_SMOOTH)));
-            button.setSize(cellSize/2, cellSize/2);
-            button.setLocation((startX + posX*cellSize + margin/2) - cellSize / 2, (startY + (boardPosY-1)*cellSize+margin/2) + cellSize / 2 * i);
+            JButton button = new JButton(new ImageIcon(images[i].getImage().getScaledInstance(cellSize / 2, cellSize / 2, Image.SCALE_SMOOTH)));
+            button.setSize(cellSize / 2, cellSize / 2);
+
+            button.setLocation((startX + posX * cellSize + margin / 2) - cellSize / 2, (startY + (boardPosY - 1) * cellSize + margin / 2) + cellSize / 2 * i);
 
             int finalI = i;
             button.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
                     Move promotionMove = chessEngine.getPromotionMove();
-                    if(promotionMove != null) {
-
+                    if (promotionMove != null) {
                         chessEngine.switchPiece(chessEngine.piecesArray[posY][posX], finalI);
-
                         chessEngine.swapSquares(new Move(promotionMove.piecePosition().x, promotionMove.piecePosition().y, chessEngine.piecesArray[posY][posX]));
-
                     } else {
-                        // This should never happen - promotionMove should always be set when isPromoting is true
                         System.err.println("Warning: promotionMove is null");
                     }
+
                     chessEngine.setIsPromoting(false);
                     chessEngine.setPromotingPawn(null);
                     chessEngine.setPromotionMove(null);
                     chessEngine.switchTurn();
 
-                    if(playingWithAI && chessEngine.getTurn() == boardParam.isReversed && chessEngine.getGameState() == 0){
+                     if(playingWithAI && chessEngine.getTurn() == boardParam.isReversed && chessEngine.getGameState() == 0){
                         startAITurn();
-                    }
+                     }
 
-                    removeAll();
+                    remove(promotionContainer);
 
+                    revalidate();
                     repaint();
                 }
             });
-            add(button);
+
+            promotionContainer.add(button);
         }
+
+        this.promotionContainer = promotionContainer;
+        add(promotionContainer);
+
+        setComponentZOrder(promotionContainer, 0);
+
+        promotionContainer.requestFocusInWindow();
+
+        repaint();
     }
 
     public void printTimer(Graphics g, BoardParameters boardParam){

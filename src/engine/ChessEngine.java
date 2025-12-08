@@ -14,7 +14,7 @@ public class ChessEngine {
 //    "k7/8/8/8/8/8/8/3NK3"
 //    "KQkq"
     BoardParameters boardParam;
-    String defaultFen = "4k3/8/8/8/8/8/p/7K";
+    String defaultFen = "4k3/8/8/8/8/8/p7/7K";
     String castleFen = "-";
     Map<String, Integer> positionMap = new HashMap<>();
 
