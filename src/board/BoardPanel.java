@@ -131,10 +131,11 @@ public class BoardPanel extends JPanel {
                         parentFrame.getContentPane().removeAll();
                         parentFrame.add(menu);
 
-                    if(playingWithAI)
-                        menu.robotGame();
-                    else{
-                        menu.startGame();
+                        if (playingWithAI)
+                            menu.robotGame();
+                        else {
+                            menu.startGame();
+                        }
                     }
                 },
                 () -> {
