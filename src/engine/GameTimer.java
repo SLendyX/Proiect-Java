@@ -40,7 +40,7 @@ public class GameTimer implements Runnable{
             while(paused){
                 lastTime = System.currentTimeMillis();
                 try {
-                    wait(50);
+                    Thread.sleep(100);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
