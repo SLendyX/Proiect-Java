@@ -5,6 +5,7 @@ import engine.ChessEngine;
 import engine.GameTimer;
 import engine.Move;
 import engine.OutOfPieceMatrixException;
+import network.NetworkGameState;
 import network.NetworkManager;
 import pieces.Piece;
 
@@ -34,10 +35,14 @@ public class BoardPanel extends JPanel {
     private GameOverPanel gameOverPanel;
     private MenuPopUp menuPopUp;
     private NetworkManager networkManager;
+    private NetworkGameState status;
     private boolean playingWithAI = false;
     private boolean isMyTurn;
     SidePanel sidePanel;
     int difficultyElo = -1;
+    private boolean opponentRequestedRematch = false;
+    private boolean waitingForRematch = false;
+    private boolean isFirstMove = true;
     StockFish stockfish = new StockFish();
     JPanel promotionContainer;
 
@@ -67,12 +72,12 @@ public class BoardPanel extends JPanel {
     }
 
     public BoardPanel(JFrame parentFrame, NetworkManager networkManager) {
-        setBoardAtributes(parentFrame);
-
         this.networkManager = networkManager;
         this.isMyTurn = networkManager.isHost();
-        networkManager.setMoveReceivedCallback(this::handleReceivedMove);
-
+        this.networkManager.setMoveReceivedCallback(this::handleReceivedMove);
+        this.networkManager.setStatusReceivedCallback(this::handleNetworkStatus);
+        this.networkManager.setConnectionLostCallback(this::handleConnectionLost);
+        setBoardAtributes(parentFrame);
         if (!networkManager.isHost()) {
             boardParam.switchBoardOrientation();
         }
@@ -95,15 +100,36 @@ public class BoardPanel extends JPanel {
         this.sidePanel = new SidePanel(parentFrame);
         this.sidePanel.setChessEngine(chessEngine);
         this.sidePanel.setGameTimer(gameTimer);
+        this.sidePanel.setNetworkManager(this.networkManager);
+
         add(sidePanel);
 
         gameOverPanel = new GameOverPanel(
                 () -> {
-                    gameTimer.resetTimer();
-                    Menu menu = new Menu(parentFrame);
+                    if (networkManager != null) {
+                        // MULTIPLAYER
+                        if (opponentRequestedRematch) {
+                            System.out.println("Accept rematch-ul!");
+                            networkManager.sendGameStatus(NetworkGameState.StatusType.REMATCH_ACCEPT);
+                            resetGame();
+                            gameTimer.resetTimer();
+                            opponentRequestedRematch = false;
+                        } else {
+                            System.out.println("Trimit cerere de rematch...");
 
-                    parentFrame.getContentPane().removeAll();
-                    parentFrame.add(menu);
+                            networkManager.sendGameStatus(NetworkGameState.StatusType.REMATCH_REQUEST);
+
+                            gameOverPanel.setTryAgainButtonText("Waiting... (1/2)");
+                            gameOverPanel.setTryAgainButtonEnabled(false);
+
+                        }
+                    } else {
+                        // SINGLEPLAYER
+                        gameTimer.resetTimer();
+                        Menu menu = new Menu(parentFrame);
+
+                        parentFrame.getContentPane().removeAll();
+                        parentFrame.add(menu);
 
                     if(playingWithAI)
                         menu.robotGame();
@@ -112,6 +138,9 @@ public class BoardPanel extends JPanel {
                     }
                 },
                 () -> {
+                if (networkManager != null) {
+                    networkManager.sendGameStatus(NetworkGameState.StatusType.REMATCH_DECLINE);
+                }
                 Menu menu = new Menu(parentFrame);
 
                 // Inlatura tabla de joc curenta si adauga meniul
@@ -133,6 +162,9 @@ public class BoardPanel extends JPanel {
                     this.requestFocusInWindow();
                     },
                 () -> {
+                    if (networkManager != null) {
+                        networkManager.sendGameStatus(NetworkGameState.StatusType.OPPONENT_LEFT);
+                    }
                     Menu menu = new Menu(parentFrame);
 
                     // Inlatura tabla de joc curenta si adauga meniul
@@ -201,7 +233,6 @@ public class BoardPanel extends JPanel {
 
             Piece piece = chessEngine.piecesArray[realY][x];
 
-//             // NOU: Nu permite mutarea daca nu e randul tau
             if (!isMyTurn) {
                 System.out.println("Asteapta mutarea adversarului.");
                 return; // Iesi din functie
@@ -219,12 +250,13 @@ public class BoardPanel extends JPanel {
 
                     printPromotionPanel(boardParam, chessEngine.getIsPromoting(), chessEngine.getPromotingPawn());
                 }else{
-                    if(chessEngine.getCurrentFen().equals(chessEngine.getDefaultFen())){
-                        gameTimer.startTimer();
+                    if (isFirstMove) {
+                        if (gameTimer != null) gameTimer.startTimer();
+                        isFirstMove = false;
                     }
-                    // NOU: Trimite mutarea prin rețea
                     if(networkManager != null){
                         networkManager.sendMove(currentMove);
+                        networkManager.setStatusReceivedCallback(this::handleNetworkStatus);
                         this.isMyTurn = false;
                     }
                     chessEngine.swapSquares(currentMove);
@@ -364,6 +396,7 @@ public class BoardPanel extends JPanel {
             case 9 -> message = "White resigned. Black Wins!";
             case 10 -> message = "Black resigned. White Wins!";
             case 11 -> message = "Draw by agreement";
+            case 12 -> message = "Opponent Left. You Won!";
         }
 
         gameOverPanel.setLabelMessage(message);
@@ -675,7 +708,7 @@ public class BoardPanel extends JPanel {
         return String.format("%d:%02d", minutes, seconds);
     }
 
-    // Adaugati aceasta metoda in BoardPanel.java
+
     private void handleReceivedMove(NetworkMove netMove) {
         // 1. Reconstruieste obiectul Move din NetworkMove
         Piece movedPiece = chessEngine.piecesArray[netMove.fromY][netMove.fromX];
@@ -685,7 +718,7 @@ public class BoardPanel extends JPanel {
             return;
         }
 
-        // Daca nu e o mutare speciala (rocarie, enpassant) se poate folosi Move simplu
+        // Daca nu e o mutare speciala (rocada, enpassant) se poate folosi Move simplu
         // Pentru rocarie, trebuie gasita tura in pozitia initiala
         Rook rook = null;
         if (netMove.isCastle) {
@@ -695,6 +728,13 @@ public class BoardPanel extends JPanel {
 
         Move currentMove = new Move(netMove.toX, netMove.toY, movedPiece, netMove.isCapture, netMove.isEnpassant, netMove.isCastle, rook);
 
+        if (isFirstMove) {
+            if (gameTimer != null) {
+                System.out.println("Start Timer (Received Move)");
+                gameTimer.startTimer();
+            }
+            isFirstMove = false;
+        }
         // 2. Executa mutarea pe tabla locala
         chessEngine.swapSquares(currentMove);
 
@@ -708,8 +748,127 @@ public class BoardPanel extends JPanel {
         // 5. Redeseneaza tabla
         repaint();
     }
+    private void handleNetworkStatus(NetworkGameState status) {
+        SwingUtilities.invokeLater(() -> {
+            switch (status.statusType) {
 
+                case RESIGN -> {
+                    System.out.println("Adversarul a cedat!");
+                    if (gameTimer != null) gameTimer.stopTimer();
+                    boolean opponentIsWhite = !networkManager.isHost();
+                    chessEngine.forceResign(opponentIsWhite);
+                    showGameOverScreen(chessEngine.getGameState());
+                    gameTimer.resetTimer();
+                }
+                case DRAW_OFFER -> {
+                    System.out.println("Am primit oferta de remiza.");
+                    if (sidePanel != null) {
+                        sidePanel.showDrawOffer(); // Metodă care face vizibil butonul de accept
+                    }
+                }
 
+                case DRAW_DECLINE -> {
+                    JOptionPane.showMessageDialog(this, "Opponent declined the draw.");
+                    if (sidePanel != null) sidePanel.enableDrawButton();
+                    System.out.println("Draw offer declined.");
+                }
+
+                case DRAW_ACCEPT -> {
+                    System.out.println("Remiza acceptata!");
+                    if (gameTimer != null) gameTimer.stopTimer();
+                    showGameOverScreen(11);
+                }
+
+                //Adversarul cere Rematch
+                case REMATCH_REQUEST -> {
+                    opponentRequestedRematch = true;
+                    if (waitingForRematch) {
+                        System.out.println("Race condition: Ambii au cerut simultan. Resetam!");
+                        resetGame();
+                        gameTimer.resetTimer();
+                    } else if(gameOverPanel != null && gameOverPanel.isVisible()) {
+                            gameOverPanel.setTryAgainButtonText("Try Again (1/2) - Opponent Ready");
+                            gameOverPanel.repaint();
+                        }
+                }
+                case REMATCH_DECLINE-> {
+                    if (gameOverPanel != null && gameOverPanel.isVisible()) {
+                        gameOverPanel.setTryAgainButtonText("Rematch Declined");
+                        gameOverPanel.setTryAgainButtonEnabled(false);
+                    }
+                }
+
+                //Rematch Acceptat
+                case REMATCH_ACCEPT -> {
+                    System.out.println("Am ajuns aici bos");
+                    resetGame();
+                    gameTimer.resetTimer();
+                    repaint();
+                }
+                case OPPONENT_LEFT -> {
+                    System.out.println("Opponent Left");
+                    showGameOverScreen(12);
+                    gameOverPanel.setTryAgainButtonText("Opponent Left");
+                    gameOverPanel.setTryAgainButtonEnabled(false);
+                    gameOverPanel.setTryAgainButtonVisible(false);
+                }
+
+            }
+        });
+    }
+
+    private void handleConnectionLost() {
+        // Dacă suntem în meniul de așteptare Rematch
+        if (waitingForRematch && gameOverPanel.isVisible()) {
+            gameOverPanel.setTryAgainButtonText("Opponent Left");
+            gameOverPanel.setTryAgainButtonEnabled(false);
+        }
+        else if (!chessEngine.isGameOver()) {
+            if (gameTimer != null){ gameTimer.stopTimer();}
+            showGameOverScreen(12);
+        }
+    }
+
+    public void resetGame() {
+        System.out.println(">>> RESET GAME (UI + ENGINE) <<<");
+
+        chessEngine.resetGame();
+
+        //resetare parametrii vizuali
+        chessEngine.setBoardParams(boardParam);
+
+        //variabilele de Multiplayer
+        opponentRequestedRematch = false;
+        waitingForRematch = false;
+        isFirstMove = true;
+
+        if (networkManager != null) {
+            this.isMyTurn = networkManager.isHost();
+            boardParam.isReversed = !networkManager.isHost();
+        } else {
+            // Singleplayer
+            this.isMyTurn = true;
+        }
+        if (gameTimer != null) {
+            gameTimer.resetTimer();
+        }
+        gameTimer = new GameTimer(chessEngine, this);
+
+        if (sidePanel != null) {
+            sidePanel.setGameTimer(gameTimer);
+            sidePanel.resetSidePanel();
+        }
+
+        if (gameOverPanel != null) {
+            gameOverPanel.setVisible(false);
+            gameOverPanel.setTryAgainButtonText("Try Again");
+            gameOverPanel.setTryAgainButtonEnabled(true);
+        }
+        repaint();
+        chessEngine.playStartSound();
+        this.requestFocusInWindow();//escape panel
+
+    }
 }
 
 /*

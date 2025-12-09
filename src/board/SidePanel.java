@@ -8,6 +8,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import network.NetworkGameState;
+import network.NetworkManager;
 
 public class SidePanel extends JPanel {
     private ChessEngine engine;
@@ -24,6 +26,10 @@ public class SidePanel extends JPanel {
 
     private final JButton btnResign;
     private final JButton btnDraw;
+
+    private JButton btnAcceptDraw;
+    private JButton btnDeclineDraw;
+    private NetworkManager networkManager;
 
     public void setGameTimer(GameTimer gameTimer) {
         this.gameTimer = gameTimer;
@@ -81,7 +87,6 @@ public class SidePanel extends JPanel {
         btnDraw.addActionListener(e -> askForDraw());
         btnResign.addActionListener(e -> resignGame());
 
-        // --- RESPONSIVENESS ---
         // Adăugăm un listener care recalculează fonturile când se redimensionează fereastra
         this.addComponentListener(new ComponentAdapter() {
             @Override
@@ -89,8 +94,46 @@ public class SidePanel extends JPanel {
                 resizeFonts();
             }
         });
+        btnAcceptDraw = new JButton("Accept Draw");
+        btnAcceptDraw.setBackground(new Color(255, 165, 0)); // Portocaliu să iasă în evidență
+        btnAcceptDraw.setForeground(Color.BLACK);
+        btnAcceptDraw.setFocusable(false);
+        btnAcceptDraw.setVisible(false);
+
+        btnDeclineDraw = new JButton("Decline Draw");
+        btnDeclineDraw.setBackground(new Color(220, 20, 60)); // Roșu
+        btnDeclineDraw.setForeground(Color.WHITE);
+        btnDeclineDraw.setFocusable(false);
+        btnDeclineDraw.setVisible(false);
+
+        btnAcceptDraw.addActionListener(e -> {
+            if (networkManager != null) {
+                networkManager.sendGameStatus(NetworkGameState.StatusType.DRAW_ACCEPT);
+                btnAcceptDraw.setVisible(false);
+                engine.agreeDraw();
+                if(gameTimer != null) gameTimer.stopTimer();
+                triggerBoardGameOver();
+            }
+        });
+        btnDeclineDraw.addActionListener(e -> {
+            if (networkManager != null) {
+                networkManager.sendGameStatus(NetworkGameState.StatusType.DRAW_DECLINE);
+                hideDrawButtons(); // Ascunde butoanele
+            }
+        });
+        gbc.gridy++;
+        add(btnAcceptDraw, gbc);
+        gbc.gridy++;
+        add(btnDeclineDraw, gbc);
 
         startUIUpdateLoop();
+
+    }
+
+
+
+    public void setNetworkManager(NetworkManager networkManager) {
+        this.networkManager = networkManager;
     }
 
     // Metodă modificată pentru a salva referințele corecte
@@ -128,7 +171,6 @@ public class SidePanel extends JPanel {
         return btn;
     }
 
-    // --- LOGICA DE SCALARE ---
     private void resizeFonts() {
         int width = getWidth();
         int height = getHeight();
@@ -213,17 +255,76 @@ public class SidePanel extends JPanel {
         if (engine.isGameOver()) return;
         int response = JOptionPane.showConfirmDialog(parentFrame, "Are you sure you want to resign?", "Confirm Resign", JOptionPane.YES_NO_OPTION);
         if (response == JOptionPane.YES_OPTION) {
-            engine.resign();
-            if(gameTimer != null) gameTimer.stopTimer();
+            if (networkManager != null) {
+                networkManager.sendGameStatus(NetworkGameState.StatusType.RESIGN);
+                boolean amIWhite = networkManager.isHost();
+                engine.forceResign(amIWhite);
+                if (gameTimer != null) gameTimer.stopTimer();
+            } else {//singleplayer
+                engine.resign();
+                if (gameTimer != null) gameTimer.stopTimer();
+                triggerBoardGameOver();
+            }
         }
     }
 
     private void askForDraw() {
         if (engine.isGameOver()) return;
-        int response = JOptionPane.showConfirmDialog(parentFrame, "Opponent offers a draw. Accept?", "Draw Offer", JOptionPane.YES_NO_OPTION);
-        if (response == JOptionPane.YES_OPTION) {
-            engine.agreeDraw();
-            if(gameTimer != null) gameTimer.stopTimer();
+        //MULTIPLAYER
+        if (networkManager != null) {
+            btnDraw.setEnabled(false);
+            int confirm = JOptionPane.showConfirmDialog(parentFrame,
+                    "Do you want to offer a draw to your opponent?",
+                    "Offer Draw", JOptionPane.YES_NO_OPTION);
+
+            if (confirm == JOptionPane.YES_OPTION) {
+                networkManager.sendGameStatus(NetworkGameState.StatusType.DRAW_OFFER);
+                JOptionPane.showMessageDialog(parentFrame, "Draw offer sent.");
+            }
         }
+        //SINGLEPLAYER / LOCAL
+        else {
+            int response = JOptionPane.showConfirmDialog(parentFrame,
+                    "Opponent offers a draw. Accept?",
+                    "Draw Offer", JOptionPane.YES_NO_OPTION);
+
+            if (response == JOptionPane.YES_OPTION) {
+                if(gameTimer != null) gameTimer.stopTimer();
+            }
+        }
+    }
+    public void showDrawOffer() {
+        btnAcceptDraw.setVisible(true);
+        btnDeclineDraw.setVisible(true);
+        btnAcceptDraw.revalidate();
+        btnAcceptDraw.repaint();
+    }
+
+    public void hideDrawButtons() {
+        btnAcceptDraw.setVisible(false);
+        btnDeclineDraw.setVisible(false);
+        revalidate();
+        repaint();
+    }
+    public void enableDrawButton() {
+        btnDraw.setEnabled(true);
+    }
+    public void resetSidePanel() {
+        btnResign.setEnabled(true);
+        btnDraw.setEnabled(true);
+
+        hideDrawButtons();
+
+        whiteTimerLabel.setText("00:00");
+        blackTimerLabel.setText("00:00");
+
+
+        if (uiUpdateTimer != null && !uiUpdateTimer.isRunning()) {
+            System.out.println("Repornire UI Update Loop");
+            uiUpdateTimer.restart();
+        }
+
+        revalidate();
+        repaint();
     }
 }

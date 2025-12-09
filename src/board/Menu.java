@@ -2,6 +2,9 @@ package board;
 
 import engine.ChessEngine;
 import network.NetworkManager;
+
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.IOException;
 import javax.swing.SwingUtilities;
 
@@ -129,18 +132,24 @@ public class Menu extends JPanel {
         loadingDialog.setSize(300, 100);
         loadingDialog.setLocationRelativeTo(parentFrame);
 
+
         new Thread(() -> {
             try {
                 // Initializare NetworkManager
                 NetworkManager networkManager = new NetworkManager(isHost);
                 networkManager.start(ipAddress); // Aici se blocheaza pana la conectare
-
                 // Odata conectat, schimba interfata in Thread-ul principal (EDT)
                 SwingUtilities.invokeLater(() -> {
                     loadingDialog.dispose(); // Inchide dialogul
                     showBoardPanel(networkManager);
                 });
-
+                loadingDialog.addWindowListener(new WindowAdapter() {
+                    @Override
+                    public void windowClosing(WindowEvent e) {
+                        // user pressed X before connection established
+                        networkManager.disconnect();
+                    }
+                });
             } catch (IOException ex) {
                 SwingUtilities.invokeLater(() -> {
                     loadingDialog.dispose(); // Inchide dialogul

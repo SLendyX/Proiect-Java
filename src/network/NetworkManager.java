@@ -12,17 +12,20 @@ public class NetworkManager {
     private ObjectOutputStream outputStream;
     private ObjectInputStream inputStream;
     private final boolean isHost;
+    private Runnable connectionLostCallback;
 
     // Mecanism pentru a notifica BoardPanel cand primeste o mutare
     private Consumer<NetworkMove> moveReceivedCallback;
 
+    private Consumer<NetworkGameState> statusReceivedCallback;
     public NetworkManager(boolean isHost) {
         this.isHost = isHost;
     }
-
+    public void setConnectionLostCallback(Runnable callback) {this.connectionLostCallback = callback;}
     public void setMoveReceivedCallback(Consumer<NetworkMove> callback) {
         this.moveReceivedCallback = callback;
     }
+    public void setStatusReceivedCallback(Consumer<NetworkGameState> callback) {this.statusReceivedCallback = callback;}
 
     public void start(String ipAddress) throws IOException {
         if (isHost) {
@@ -42,7 +45,7 @@ public class NetworkManager {
         inputStream = new ObjectInputStream(socket.getInputStream());
 
         // Porneste un thread separat pentru a asculta mutari primite
-        new Thread(this::listenForMoves).start();
+        new Thread(this::listenForData).start();
     }
 
     // Trimite mutarea adversarului
@@ -67,8 +70,19 @@ public class NetworkManager {
         }
     }
 
+    public void sendGameStatus(NetworkGameState.StatusType type) {
+        try {
+            NetworkGameState status = new NetworkGameState(type);
+            outputStream.writeObject(status);
+            outputStream.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.err.println("Eroare la trimiterea statusului.");
+        }
+    }
+
     // Ruleaza pe un thread separat si asculta mutari
-    private void listenForMoves() {
+    public void listenForData() {
         try {
             while (socket.isConnected()) {
                 // Asteapta primirea unui obiect (mutare)
@@ -81,12 +95,36 @@ public class NetworkManager {
                         }
                     });
                 }
+                else if (receivedObject instanceof NetworkGameState netStatus) {
+                    SwingUtilities.invokeLater(() -> {
+                        if (statusReceivedCallback != null) {
+                            statusReceivedCallback.accept(netStatus);
+                        }
+                    });
+                }
             }
         } catch (ClassNotFoundException | IOException e) {
-            if (socket != null && !socket.isClosed()) {
-                System.err.println("Conexiune pierduta sau eroare: " + e.getMessage());
+            System.err.println("Conexiune întreruptă: " + e.getMessage());
+            if (connectionLostCallback != null) {
+                SwingUtilities.invokeLater(connectionLostCallback);
             }
         }
+    }
+
+    public void disconnect() {
+        try {
+            if (inputStream != null) inputStream.close();
+        } catch (IOException ignored) {}
+
+        try {
+            if (outputStream != null) outputStream.close();
+        } catch (IOException ignored) {}
+
+        try {
+            if (socket != null && !socket.isClosed()) socket.close();
+        } catch (IOException ignored) {}
+
+        System.out.println("NetworkManager: all connections closed.");
     }
 
     public boolean isHost() {
