@@ -76,6 +76,7 @@ public class BoardPanel extends JPanel {
         this.isMyTurn = networkManager.isHost();
         this.networkManager.setMoveReceivedCallback(this::handleReceivedMove);
         this.networkManager.setStatusReceivedCallback(this::handleNetworkStatus);
+        this.networkManager.setConnectionLostCallback(this::handleConnectionLost);
         setBoardAtributes(parentFrame);
         if (!networkManager.isHost()) {
             boardParam.switchBoardOrientation();
