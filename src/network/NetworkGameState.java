@@ -13,7 +13,9 @@ public class NetworkGameState implements Serializable {
         DRAW_ACCEPT,
         DRAW_DECLINE,
         REMATCH_REQUEST,
-        REMATCH_ACCEPT
+        REMATCH_ACCEPT,
+        REMATCH_DECLINE,
+        OPPONENT_LEFT
     }
 
     public StatusType statusType;

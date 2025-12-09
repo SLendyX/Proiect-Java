@@ -28,6 +28,7 @@ public class SidePanel extends JPanel {
     private final JButton btnDraw;
 
     private JButton btnAcceptDraw;
+    private JButton btnDeclineDraw;
     private NetworkManager networkManager;
 
     public void setGameTimer(GameTimer gameTimer) {
@@ -93,20 +94,38 @@ public class SidePanel extends JPanel {
                 resizeFonts();
             }
         });
-        gbc.gridy++;
-        btnAcceptDraw = new JButton("Accept Draw Offer");
+        btnAcceptDraw = new JButton("Accept Draw");
         btnAcceptDraw.setBackground(new Color(255, 165, 0)); // Portocaliu să iasă în evidență
         btnAcceptDraw.setForeground(Color.BLACK);
         btnAcceptDraw.setFocusable(false);
         btnAcceptDraw.setVisible(false);
 
+        btnDeclineDraw = new JButton("Decline Draw");
+        btnDeclineDraw.setBackground(new Color(220, 20, 60)); // Roșu
+        btnDeclineDraw.setForeground(Color.WHITE);
+        btnDeclineDraw.setFocusable(false);
+        btnDeclineDraw.setVisible(false);
+
         btnAcceptDraw.addActionListener(e -> {
             if (networkManager != null) {
                 networkManager.sendGameStatus(NetworkGameState.StatusType.DRAW_ACCEPT);
                 btnAcceptDraw.setVisible(false);
+                engine.agreeDraw();
+                if(gameTimer != null) gameTimer.stopTimer();
+                triggerBoardGameOver();
             }
         });
+        btnDeclineDraw.addActionListener(e -> {
+            if (networkManager != null) {
+                networkManager.sendGameStatus(NetworkGameState.StatusType.DRAW_DECLINE);
+                hideDrawButtons(); // Ascunde butoanele
+            }
+        });
+        gbc.gridy++;
         add(btnAcceptDraw, gbc);
+        gbc.gridy++;
+        add(btnDeclineDraw, gbc);
+
         startUIUpdateLoop();
 
     }
@@ -238,9 +257,14 @@ public class SidePanel extends JPanel {
         if (response == JOptionPane.YES_OPTION) {
             if (networkManager != null) {
                 networkManager.sendGameStatus(NetworkGameState.StatusType.RESIGN);
+                boolean amIWhite = networkManager.isHost();
+                engine.forceResign(amIWhite);
+                if (gameTimer != null) gameTimer.stopTimer();
+            } else {//singleplayer
+                engine.resign();
+                if (gameTimer != null) gameTimer.stopTimer();
+                triggerBoardGameOver();
             }
-            engine.resign();
-            if(gameTimer != null) gameTimer.stopTimer();
         }
     }
 
@@ -248,6 +272,7 @@ public class SidePanel extends JPanel {
         if (engine.isGameOver()) return;
         //MULTIPLAYER
         if (networkManager != null) {
+            btnDraw.setEnabled(false);
             int confirm = JOptionPane.showConfirmDialog(parentFrame,
                     "Do you want to offer a draw to your opponent?",
                     "Offer Draw", JOptionPane.YES_NO_OPTION);
@@ -255,8 +280,6 @@ public class SidePanel extends JPanel {
             if (confirm == JOptionPane.YES_OPTION) {
                 networkManager.sendGameStatus(NetworkGameState.StatusType.DRAW_OFFER);
                 JOptionPane.showMessageDialog(parentFrame, "Draw offer sent.");
-                // We disable the button temporarily so you don't spam offers
-                btnDraw.setEnabled(false);
             }
         }
         //SINGLEPLAYER / LOCAL
@@ -266,14 +289,42 @@ public class SidePanel extends JPanel {
                     "Draw Offer", JOptionPane.YES_NO_OPTION);
 
             if (response == JOptionPane.YES_OPTION) {
-                engine.agreeDraw();
                 if(gameTimer != null) gameTimer.stopTimer();
             }
         }
     }
     public void showDrawOffer() {
         btnAcceptDraw.setVisible(true);
+        btnDeclineDraw.setVisible(true);
         btnAcceptDraw.revalidate();
         btnAcceptDraw.repaint();
+    }
+
+    public void hideDrawButtons() {
+        btnAcceptDraw.setVisible(false);
+        btnDeclineDraw.setVisible(false);
+        revalidate();
+        repaint();
+    }
+    public void enableDrawButton() {
+        btnDraw.setEnabled(true);
+    }
+    public void resetSidePanel() {
+        btnResign.setEnabled(true);
+        btnDraw.setEnabled(true);
+
+        hideDrawButtons();
+
+        whiteTimerLabel.setText("00:00");
+        blackTimerLabel.setText("00:00");
+
+
+        if (uiUpdateTimer != null && !uiUpdateTimer.isRunning()) {
+            System.out.println("Repornire UI Update Loop");
+            uiUpdateTimer.restart();
+        }
+
+        revalidate();
+        repaint();
     }
 }

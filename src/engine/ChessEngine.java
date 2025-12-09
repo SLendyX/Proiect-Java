@@ -792,7 +792,17 @@ public class ChessEngine {
             return 3;
         }
     }
-
+    public void forceResign(boolean isWhiteResigning) {
+        if (isWhiteResigning) {
+            whiteResigned = true;
+            blackResigned = false;
+        } else {
+            blackResigned = true;
+            whiteResigned = false;
+        }
+        setGameState(turn);
+        playEndSound();
+    }
     public void resetGame() {
         this.piecesArray = null;
         this.movesArray = null;
@@ -808,6 +818,7 @@ public class ChessEngine {
         this.whiteResigned = false;
         this.blackResigned = false;
         this.drawAgreed = false;
+        positionMap.clear();
         instantiatePieceArray(defaultFen);
     }
 

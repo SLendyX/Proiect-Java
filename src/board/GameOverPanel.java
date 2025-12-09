@@ -15,4 +15,8 @@ public class GameOverPanel extends PopUp {
     public void setTryAgainButtonEnabled(boolean enabled) {
         setFirstButtonEnabled(enabled);
     }
+
+    public void setTryAgainButtonVisible(boolean enabled) {
+        setFirstButtonVisible(enabled);
+    }
 }

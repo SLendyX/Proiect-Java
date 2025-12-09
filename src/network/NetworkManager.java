@@ -12,16 +12,16 @@ public class NetworkManager {
     private ObjectOutputStream outputStream;
     private ObjectInputStream inputStream;
     private final boolean isHost;
+    private Runnable connectionLostCallback;
 
     // Mecanism pentru a notifica BoardPanel cand primeste o mutare
     private Consumer<NetworkMove> moveReceivedCallback;
 
     private Consumer<NetworkGameState> statusReceivedCallback;
-
     public NetworkManager(boolean isHost) {
         this.isHost = isHost;
     }
-
+    public void setConnectionLostCallback(Runnable callback) {this.connectionLostCallback = callback;}
     public void setMoveReceivedCallback(Consumer<NetworkMove> callback) {
         this.moveReceivedCallback = callback;
     }
@@ -104,10 +104,27 @@ public class NetworkManager {
                 }
             }
         } catch (ClassNotFoundException | IOException e) {
-            if (socket != null && !socket.isClosed()) {
-                System.err.println("Conexiune pierduta sau eroare: " + e.getMessage());
+            System.err.println("Conexiune întreruptă: " + e.getMessage());
+            if (connectionLostCallback != null) {
+                SwingUtilities.invokeLater(connectionLostCallback);
             }
         }
+    }
+
+    public void disconnect() {
+        try {
+            if (inputStream != null) inputStream.close();
+        } catch (IOException ignored) {}
+
+        try {
+            if (outputStream != null) outputStream.close();
+        } catch (IOException ignored) {}
+
+        try {
+            if (socket != null && !socket.isClosed()) socket.close();
+        } catch (IOException ignored) {}
+
+        System.out.println("NetworkManager: all connections closed.");
     }
 
     public boolean isHost() {
