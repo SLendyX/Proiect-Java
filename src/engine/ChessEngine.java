@@ -11,8 +11,13 @@ import java.util.*;
 
 public class ChessEngine {
     //    String defaultFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+//    "k7/8/8/8/8/8/8/3NK3"
+//    "KQkq"
     BoardParameters boardParam;
     String defaultFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+    String castleFen = "KQkq";
+    Map<String, Integer> positionMap = new HashMap<>();
+
     boolean isPromoting = false;
     boolean turn = true;
     Piece promotingPawn;
@@ -21,11 +26,17 @@ public class ChessEngine {
     King castledKing;
     boolean isChecked;
     int gameState;
+    private int halfMoveClock = 0;
+    private boolean whiteResigned = false;
+    private boolean blackResigned = false;
+    private boolean drawAgreed = false;
+    private int promotionIndexAI = -1;
 
     private final Clip moveSound;
     private final Clip captureSound;
     private final Clip castleSound;
     private final Clip checkSound;
+    private final Clip gameStartSound;
     private final Clip gameEndSound;
     private final Clip promotionSound;
 
@@ -39,6 +50,7 @@ public class ChessEngine {
         this.captureSound = loadClip("/data/audio/capture.wav");
         this.castleSound  = loadClip("/data/audio/castle.wav");
         this.checkSound = loadClip("/data/audio/move-check.wav");
+        this.gameStartSound = loadClip("/data/audio/game-start.wav");
         this.gameEndSound = loadClip("/data/audio/game-end.wav");
         this.promotionSound = loadClip("/data/audio/promote.wav");
     }
@@ -73,6 +85,14 @@ public class ChessEngine {
         clip.stop();       // stop if still playing
         clip.setFramePosition(0);
         clip.start();      // play again from start
+    }
+
+    public void playStartSound() {
+        playSound(gameStartSound);
+    }
+
+    public void playEndSound(){
+        playSound(gameEndSound);
     }
 
     public void setCastledKing(King castledKing) {
@@ -127,8 +147,41 @@ public class ChessEngine {
         }
 
         return this.movesArray.get(getChessCoords(x, y));
-
     }
+
+    public void modifyCastleFen(boolean isWhite){
+        if(castleFen.length() > 2){
+            castleFen = isWhite ? "kq" : "KQ";
+        }else{
+            castleFen = "-";
+        }
+    }
+
+    public void modifyCastleFenForRook(Rook rook){
+        int x = rook.getPostion().x;
+        if(x!=0 && x!=7)
+            return;
+
+        boolean isWhite = rook.isWhite();
+
+        char symbol = x == 0 ? 'q' : 'k';
+        symbol = isWhite ? Character.toUpperCase(symbol) : symbol;
+
+        StringBuilder builder = new StringBuilder();
+
+        for(int i=0; i <castleFen.length(); i++){
+            if(symbol != castleFen.charAt(i)){
+                builder.append(castleFen.charAt(i));
+            }
+        }
+
+        castleFen = builder.toString();
+
+        if(castleFen.isEmpty()){
+            castleFen = "-";
+        }
+    }
+
 
     public void swapSquares(Move move){
         int moveX = move.piecePosition().x;
@@ -153,12 +206,21 @@ public class ChessEngine {
 
             System.out.println(rookX + " " + rookY);
 
-
             piecesArray[pieceY][dirX] = move.rook();
             piecesArray[pieceY][dirX].setHasMoved(true);
             piecesArray[pieceY][dirX].setPosition(dirX, pieceY);
 
             piecesArray[rookY][rookX] = null;
+        }
+
+        if(piece instanceof King king){
+            if(!king.hasMoved()){
+                modifyCastleFen(king.isWhite());
+            }
+        }else if(piece instanceof Rook rook){
+            if(!rook.hasMoved()){
+                modifyCastleFenForRook(rook);
+            }
         }
 
         piecesArray[moveY][moveX].setPosition(moveX, moveY);
@@ -167,6 +229,25 @@ public class ChessEngine {
             getEnPassantPawn().setCanEnPassant(false);
             setEnPassantPawn(null);
         }
+
+        if (piece instanceof Pawn || move.isCapture()) {
+            halfMoveClock = 0;
+        } else {
+            halfMoveClock++;
+        }
+
+        if(piecesArray[moveY][moveX] instanceof Pawn pawn){
+            pawn.setCanEnPassant(Math.abs(moveY - pieceY) == 2);
+            if(pawn.getCanEnpassant())
+                setEnPassantPawn(pawn);
+        }
+
+        if(!piecesArray[moveY][moveX].hasMoved()){
+            piecesArray[moveY][moveX].setHasMoved(true);
+        }
+
+
+        updatePositions();
 
         setIsChecked(!getTurn());
         setGameState(!getTurn());
@@ -185,14 +266,7 @@ public class ChessEngine {
             playSound(moveSound);
         }
 
-        if(piecesArray[moveY][moveX] instanceof Pawn pawn){
-            pawn.setCanEnPassant(Math.abs(moveY - pieceY) == 2);
-            setEnPassantPawn(pawn);
-        }
-
-        if(!piecesArray[moveY][moveX].hasMoved()){
-            piecesArray[moveY][moveX].setHasMoved(true);
-        }
+        System.out.printf("Full FEN:%s (count: %d)%n", getFullFen(), positionMap.get(getFullFen()));
     }
 
     public void setBoardParams(BoardParameters boardParam){
@@ -284,6 +358,50 @@ public class ChessEngine {
         return fen.toString();
     }
 
+    public String getFullFen(){
+        StringBuilder fen = new StringBuilder();
+        fen.append(getCurrentFen()).append(" ");
+
+        fen.append(castleFen).append(" ");
+
+        if(enPassantPawn == null){
+            fen.append("-");
+        }else{
+            fen.append(getChessCoords(enPassantPawn.getPostion(), boardParam.isReversed));
+        }
+
+        return fen.toString();
+    }
+
+    public String getFenForAI(){
+        StringBuilder fen = new StringBuilder();
+        fen.append(getCurrentFen()).append(" ");
+        fen.append(getTurn() ? "w" : "b").append(" ");
+        fen.append(castleFen).append(" ");
+
+        if(enPassantPawn == null){
+            fen.append("-");
+        }else{
+            fen.append(getChessCoords(enPassantPawn.getPostion(), boardParam.isReversed));
+        }
+        fen.append(" ");
+
+        fen.append(halfMoveClock).append(" ");
+        fen.append(halfMoveClock/2);
+
+        return fen.toString();
+    }
+
+
+
+    public void updatePositions(){
+        String key = getFullFen();
+        int counter = positionMap.get(key) == null ? 1 : positionMap.get(key) + 1;
+
+        positionMap.put(key, counter);
+    }
+
+
     public static String getChessCoords(int x, int y){
         String cols = "abcdefgh";
         String rows = "87654321";
@@ -307,6 +425,65 @@ public class ChessEngine {
                 rows.charAt(y);
     }
 
+    public static String getChessCoords(PiecePosition position, boolean isReversed){
+        int x = position.x;
+        int y = position.y;
+
+        return getChessCoords(x, y, isReversed);
+    }
+
+    public Move getMoveFromUCI(String uciMove) {
+        // 1. Parse Start Coordinate (e.g., "e2")
+        int fromX = uciMove.charAt(0) - 'a'; // 'e' -> 4
+        // Convert rank '2' to index 6 (because your row 0 is rank 8)
+        int fromY = 8 - (uciMove.charAt(1) - '0');
+
+        // 2. Parse Destination Coordinate (e.g., "e4")
+        int toX = uciMove.charAt(2) - 'a';
+        int toY = 8 - (uciMove.charAt(3) - '0');
+
+        // 3. Retrieve the Piece from your board array
+        Piece movingPiece = piecesArray[fromY][fromX];
+
+        // Safety check (shouldn't happen if engine is synced)
+        if (movingPiece == null) {
+            System.err.println("Error: Stockfish tried to move from " + uciMove + " but square is empty.");
+            return null;
+        }
+
+        // 4. Detect Special Move Attributes for your Move Record
+        Piece targetPiece = piecesArray[toY][toX];
+        boolean isCapture = (targetPiece != null);
+
+        // Check Castling (King moves 2 squares)
+        boolean isCastle = (movingPiece instanceof King) && Math.abs(fromX - toX) == 2;
+
+        if(isCastle){
+            setCastledKing((King) movingPiece);
+        }
+
+        // Check En Passant (Pawn moves diagonally to empty square)
+        boolean isEnPassant = (movingPiece instanceof Pawn)
+                && (fromX != toX)
+                && (targetPiece == null);
+
+        // 5. Handle Promotion (UCI string length is 5, e.g., "a7a8q")
+        if (uciMove.length() == 5) {
+            String promotions = "qrbn";
+
+            setPromotionIndexAI(promotions.indexOf(uciMove.charAt(4)));
+
+            this.setIsPromoting(true);
+            this.setPromotingPawn(movingPiece);
+        }
+
+        Rook castleRook = isCastle ? (Rook) (fromX - toX < 0 ? piecesArray[fromY][7] : piecesArray[fromY][0]) : null;
+
+        // 6. Return your custom Move object
+        return new Move(toX, toY, movingPiece, isCapture, isEnPassant, isCastle, castleRook);
+    }
+
+
     public boolean canPromote(Piece pawn){
         int posY = pawn.getPostion().y;
         boolean isWhite = pawn.isWhite();
@@ -317,6 +494,8 @@ public class ChessEngine {
 
         return !isWhite && (posY == 6);
     }
+
+
 
     public void switchPiece(Piece pawn, int choice) {
         System.out.println("Can promote pawn");
@@ -370,6 +549,56 @@ public class ChessEngine {
                     }
                 }
             }
+        }
+        return false;
+    }
+
+
+    private boolean hasInsufficientMaterial(){
+        List<Piece> allPieces = new ArrayList<>();
+        boolean whiteHasKnight = false;
+        boolean blackHasKnight = false;
+
+        for (int r = 0; r < 8; r++) {
+            for (int c = 0; c < 8; c++) {
+                Piece p = piecesArray[r][c];
+                if(p != null) {
+                    if(p instanceof Queen ||p instanceof Rook || p instanceof Pawn){
+                        return false;
+                    }
+
+                    allPieces.add(p);
+                    if(p instanceof Knight){
+                        if(p.isWhite()) whiteHasKnight = true;
+                        else blackHasKnight = true;
+                    }
+                }
+            }
+        }
+
+        if(allPieces.size() == 2){
+            return true;
+        }
+        if(allPieces.size() == 3){
+            return true;
+        }
+        if(!whiteHasKnight && !blackHasKnight) {
+            int firstSquareColor = -1;
+
+            for (Piece p : allPieces) {
+                if (p instanceof Bishop) {
+                    int x = p.getPostion().x;
+                    int y = p.getPostion().y;
+                    int currentSquareColor = (x + y) % 2;
+
+                    if (firstSquareColor == -1) {
+                        firstSquareColor = currentSquareColor;
+                    } else if (firstSquareColor != currentSquareColor) {
+                        return false;
+                    }
+                }
+            }
+            return true;
         }
         return false;
     }
@@ -443,6 +672,40 @@ public class ChessEngine {
         return legal.toArray(new Move[0]);
     }
 
+    public Move getRandomMove(boolean isWhite) {
+        List<Move> allLegalMoves = new ArrayList<>();
+
+        // 1. Loop through all pieces
+        for (int row = 0; row < 8; row++) {
+            for (int col = 0; col < 8; col++) {
+                Piece p = piecesArray[row][col];
+
+                // 2. If it's the AI's piece, get its legal moves
+                if (p != null && p.isWhite() == isWhite) {
+                    Move[] moves = filterLegalMoves(p, piecesArray);
+                    allLegalMoves.addAll(Arrays.asList(moves));
+                }
+            }
+        }
+
+        // 3. Return a random one
+        if (!allLegalMoves.isEmpty()) {
+            Move randomMove = allLegalMoves.get(new Random().nextInt(allLegalMoves.size()));
+
+            if(randomMove.moveAuthor() instanceof Pawn && (randomMove.piecePosition().y == 0 || randomMove.piecePosition().y == 7)){
+                Random random = new Random();
+
+                setPromotionIndexAI(random.nextInt(4));
+
+                this.setIsPromoting(true);
+                this.setPromotingPawn(randomMove.moveAuthor());
+            }
+
+            return randomMove;
+        }
+        return null;
+    }
+
     public PiecePosition getKingPos(Piece[][] board, boolean turn){
         int kingX = -1;
         int kingY = -1;
@@ -465,7 +728,45 @@ public class ChessEngine {
         this.isChecked = isSquareAttacked(kingPosition.x, kingPosition.y, turn, this.piecesArray);
     }
 
+    public void resign() {
+        if (turn) {
+            whiteResigned = true;
+        } else {
+            blackResigned = true;
+        }
+        System.out.println("W = " + whiteResigned + " B = " + blackResigned);
+        setGameState(turn);
+        playEndSound();
+    }
+
+    public void agreeDraw() {
+        drawAgreed = true;
+        setGameState(turn);
+        System.out.println("Draw?: " + drawAgreed);
+        playEndSound();
+    }
+
+    public boolean isGameOver() {
+        return gameState != 0;
+    }
+
     public int calculateGameState(boolean turn) {
+        if (whiteResigned) {
+            return 9;
+        }
+        if (blackResigned) {
+            return 10;
+        }
+        if (drawAgreed) {
+            return 11;
+        }
+        if(hasInsufficientMaterial()){
+            return 6;
+        }else if(halfMoveClock >= 100){
+            return 7;
+        }else if(positionMap.get(getFullFen()) != null && positionMap.get(getFullFen()) >=3){
+            return 8;
+        }
         boolean hasLegalMoves = false;
         outerLoop:
         for (int r = 0; r < 8; r++) {
@@ -491,7 +792,17 @@ public class ChessEngine {
             return 3;
         }
     }
-
+    public void forceResign(boolean isWhiteResigning) {
+        if (isWhiteResigning) {
+            whiteResigned = true;
+            blackResigned = false;
+        } else {
+            blackResigned = true;
+            whiteResigned = false;
+        }
+        setGameState(turn);
+        playEndSound();
+    }
     public void resetGame() {
         this.piecesArray = null;
         this.movesArray = null;
@@ -502,8 +813,12 @@ public class ChessEngine {
         this.enPassantPawn = null;
         this.castledKing = null;
         this.isChecked = false;
+        this.halfMoveClock = 0;
         this.gameState = 0;
-
+        this.whiteResigned = false;
+        this.blackResigned = false;
+        this.drawAgreed = false;
+        positionMap.clear();
         instantiatePieceArray(defaultFen);
     }
 
@@ -551,4 +866,11 @@ public class ChessEngine {
         return this.gameState;
     }
 
+    public int getPromotionIndexAI() {
+        return promotionIndexAI;
+    }
+
+    public void setPromotionIndexAI(int promotionIndexAI) {
+        this.promotionIndexAI = promotionIndexAI;
+    }
 }

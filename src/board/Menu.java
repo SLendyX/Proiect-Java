@@ -1,14 +1,19 @@
 package board;
 
+import engine.ChessEngine;
 import network.NetworkManager;
+
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.IOException;
 import javax.swing.SwingUtilities;
 
 import javax.swing.*;
 import java.awt.*;
 import java.net.URL;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+
+import static java.lang.Math.min;
+
 
 public class Menu extends JPanel {
     private final JFrame parentFrame;
@@ -20,7 +25,7 @@ public class Menu extends JPanel {
 
         // NOU: ÎNCARCĂ IMAGINEA
         try {
-            URL imageUrl = getClass().getResource("/data/background/shaw.png");
+            URL imageUrl = getClass().getResource("/data/background/shawty.png");
             if (imageUrl != null) {
                 this.backgroundImage = new ImageIcon(imageUrl).getImage();
             } else {
@@ -90,14 +95,23 @@ public class Menu extends JPanel {
 
     public void startGame(){
         parentFrame.getContentPane().removeAll();
+        parentFrame.setLayout(new BorderLayout()); // Use GridBagLayout, NOT BorderLayout
+
         BoardPanel board = new BoardPanel(parentFrame);
-        parentFrame.add(board);
+        parentFrame.add(board, BorderLayout.CENTER);
+
         parentFrame.revalidate();
         parentFrame.repaint();
         board.requestFocusInWindow();
     }
 
-    private void robotGame() {
+    public void robotGame() {
+        parentFrame.getContentPane().removeAll();
+        AIMenu aiMenu = new AIMenu(parentFrame,this);
+        parentFrame.add(aiMenu);
+        parentFrame.revalidate();
+        parentFrame.repaint();
+        aiMenu.requestFocusInWindow();
     }
 
     @Override
@@ -118,18 +132,24 @@ public class Menu extends JPanel {
         loadingDialog.setSize(300, 100);
         loadingDialog.setLocationRelativeTo(parentFrame);
 
+
         new Thread(() -> {
             try {
                 // Initializare NetworkManager
                 NetworkManager networkManager = new NetworkManager(isHost);
                 networkManager.start(ipAddress); // Aici se blocheaza pana la conectare
-
                 // Odata conectat, schimba interfata in Thread-ul principal (EDT)
                 SwingUtilities.invokeLater(() -> {
                     loadingDialog.dispose(); // Inchide dialogul
                     showBoardPanel(networkManager);
                 });
-
+                loadingDialog.addWindowListener(new WindowAdapter() {
+                    @Override
+                    public void windowClosing(WindowEvent e) {
+                        // user pressed X before connection established
+                        networkManager.disconnect();
+                    }
+                });
             } catch (IOException ex) {
                 SwingUtilities.invokeLater(() -> {
                     loadingDialog.dispose(); // Inchide dialogul
@@ -154,5 +174,13 @@ public class Menu extends JPanel {
         parentFrame.repaint();
 
         board.requestFocusInWindow();
+    }
+
+    public void showMenu() {
+        parentFrame.getContentPane().removeAll();
+        parentFrame.add(this); // Adaugă instanța Menu înapoi în Frame
+        parentFrame.revalidate();
+        parentFrame.repaint();
+        this.requestFocusInWindow();
     }
 }
