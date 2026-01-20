@@ -125,40 +125,68 @@ public class Menu extends JPanel {
 
     // Functie pentru a porni jocul in retea (RULEAZA PE UN THREAD SEPARAT!)
     private void hostGame(boolean isHost, String ipAddress) {
-        // Afiseaza un dialog de asteptare, deoarece conexiunea blocheaza
+        // 1. Setup the Dialog
         JDialog loadingDialog = new JDialog(parentFrame, "Conectare...", true);
         loadingDialog.setLayout(new FlowLayout());
         loadingDialog.add(new JLabel(isHost ? "Astept jucatorul advers (client)..." : "Ma conectez la Host..."));
         loadingDialog.setSize(300, 100);
         loadingDialog.setLocationRelativeTo(parentFrame);
 
+        // Set default close operation to do nothing initially,
+        // so we can handle the disconnect logic explicitly in windowClosing
+        loadingDialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
 
+        // 2. Initialize NetworkManager outside the thread
+        // so it is accessible to both the listener (EDT) and the worker thread.
+        NetworkManager networkManager = new NetworkManager(isHost);
+
+        // 3. Add the Listener BEFORE showing the dialog or starting the thread
+        loadingDialog.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                // User pressed X. Stop the network process.
+                System.out.println("User cancelled connection.");
+                try {
+                    // This should close the socket, which will cause the
+                    // blocking 'start()' method in the thread to throw an IOException
+                    networkManager.disconnect();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+                loadingDialog.dispose();
+            }
+        });
+
+        // 4. Start the Background Thread
         new Thread(() -> {
             try {
-                // Initializare NetworkManager
-                NetworkManager networkManager = new NetworkManager(isHost);
-                networkManager.start(ipAddress); // Aici se blocheaza pana la conectare
-                // Odata conectat, schimba interfata in Thread-ul principal (EDT)
+                // This blocks until connected
+                networkManager.start(ipAddress);
+
+                // Connection successful
                 SwingUtilities.invokeLater(() -> {
-                    loadingDialog.dispose(); // Inchide dialogul
-                    showBoardPanel(networkManager);
-                });
-                loadingDialog.addWindowListener(new WindowAdapter() {
-                    @Override
-                    public void windowClosing(WindowEvent e) {
-                        // user pressed X before connection established
-                        networkManager.disconnect();
+                    // Only proceed if the dialog is still visible (user hasn't cancelled)
+                    if (loadingDialog.isDisplayable()) {
+                        loadingDialog.dispose();
+                        showBoardPanel(networkManager);
                     }
                 });
             } catch (IOException ex) {
                 SwingUtilities.invokeLater(() -> {
-                    loadingDialog.dispose(); // Inchide dialogul
-                    JOptionPane.showMessageDialog(parentFrame, "Eroare la conectare: " + ex.getMessage() + "\nAsigurati-va ca host-ul ruleaza si IP-ul este corect.", "Eroare Retea", JOptionPane.ERROR_MESSAGE);
+                    // Only show error if the user didn't intentionally close the dialog
+                    if (loadingDialog.isDisplayable()) {
+                        loadingDialog.dispose();
+                        JOptionPane.showMessageDialog(parentFrame,
+                                "Eroare la conectare: " + ex.getMessage() + "\nAsigurati-va ca host-ul ruleaza.",
+                                "Eroare Retea",
+                                JOptionPane.ERROR_MESSAGE);
+                    }
                 });
             }
         }).start();
 
-        loadingDialog.setVisible(true); // Afiseaza dialogul
+        // 5. Show the Dialog (This blocks the EDT because the dialog is modal)
+        loadingDialog.setVisible(true);
     }
 
     private void showBoardPanel(NetworkManager networkManager) {

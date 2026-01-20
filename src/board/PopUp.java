@@ -29,8 +29,6 @@ public abstract class PopUp extends JPanel{
         firstBtn.setFont(new Font("Arial", Font.PLAIN, 16));
         firstBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
         firstBtn.addActionListener(e -> {
-            // Daca e multiplayer, putem lasa vizibil pana este acceptat
-            setVisible(false);
             firstOption.run();
         });
 

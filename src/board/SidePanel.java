@@ -95,8 +95,8 @@ public class SidePanel extends JPanel {
             }
         });
         btnAcceptDraw = new JButton("Accept Draw");
-        btnAcceptDraw.setBackground(new Color(255, 165, 0)); // Portocaliu să iasă în evidență
-        btnAcceptDraw.setForeground(Color.BLACK);
+        btnAcceptDraw.setBackground(new Color(0, 165, 0)); // Portocaliu să iasă în evidență
+        btnAcceptDraw.setForeground(Color.WHITE);
         btnAcceptDraw.setFocusable(false);
         btnAcceptDraw.setVisible(false);
 
@@ -109,7 +109,7 @@ public class SidePanel extends JPanel {
         btnAcceptDraw.addActionListener(e -> {
             if (networkManager != null) {
                 networkManager.sendGameStatus(NetworkGameState.StatusType.DRAW_ACCEPT);
-                btnAcceptDraw.setVisible(false);
+                hideDrawButtons();
                 engine.agreeDraw();
                 if(gameTimer != null) gameTimer.stopTimer();
                 triggerBoardGameOver();
@@ -129,7 +129,6 @@ public class SidePanel extends JPanel {
         startUIUpdateLoop();
 
     }
-
 
 
     public void setNetworkManager(NetworkManager networkManager) {

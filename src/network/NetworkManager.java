@@ -9,6 +9,7 @@ import java.util.function.Consumer;
 
 public class NetworkManager {
     private Socket socket;
+    private ServerSocket serverSocket;
     private ObjectOutputStream outputStream;
     private ObjectInputStream inputStream;
     private final boolean isHost;
@@ -29,7 +30,7 @@ public class NetworkManager {
 
     public void start(String ipAddress) throws IOException {
         if (isHost) {
-            ServerSocket serverSocket = new ServerSocket(8888); // Port standard: 8888
+            serverSocket = new ServerSocket(8888); // Port standard: 8888
             System.out.println("Asteptare conexiune client pe portul 8888...");
             socket = serverSocket.accept(); // Asteapta pana se conecteaza cineva
             serverSocket.close();
@@ -123,6 +124,14 @@ public class NetworkManager {
         try {
             if (socket != null && !socket.isClosed()) socket.close();
         } catch (IOException ignored) {}
+
+        try {
+            if (serverSocket != null && !serverSocket.isClosed()) {
+                serverSocket.close();
+            }
+        } catch (IOException e) {
+            System.err.println("Error closing ServerSocket: " + e.getMessage());
+        }
 
         System.out.println("NetworkManager: all connections closed.");
     }

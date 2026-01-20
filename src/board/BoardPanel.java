@@ -93,6 +93,8 @@ public class BoardPanel extends JPanel {
                 new Color(240, 217, 181)
         );
 
+        this.setBackground(boardParam.backgroundColor);
+
         chessEngine.setBoardParams(boardParam);
         chessEngine.instantiatePieceArray();
         gameTimer = new GameTimer(chessEngine, this);
@@ -104,41 +106,51 @@ public class BoardPanel extends JPanel {
 
         add(sidePanel);
 
+        this.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent e) {
+                updateComponentBounds();
+            }
+        });
+
         gameOverPanel = new GameOverPanel(
-                () -> {
-                    if (networkManager != null) {
-                        // MULTIPLAYER
-                        if (opponentRequestedRematch) {
-                            System.out.println("Accept rematch-ul!");
-                            networkManager.sendGameStatus(NetworkGameState.StatusType.REMATCH_ACCEPT);
-                            resetGame();
-                            gameTimer.resetTimer();
-                            opponentRequestedRematch = false;
-                        } else {
-                            System.out.println("Trimit cerere de rematch...");
-
-                            networkManager.sendGameStatus(NetworkGameState.StatusType.REMATCH_REQUEST);
-
-                            gameOverPanel.setTryAgainButtonText("Waiting... (1/2)");
-                            gameOverPanel.setTryAgainButtonEnabled(false);
-
-                        }
-                    } else {
-                        // SINGLEPLAYER
+            () -> {
+                if (networkManager != null) {
+                    // MULTIPLAYER
+                    if (opponentRequestedRematch) {
+                        System.out.println("Accept rematch-ul!");
+                        networkManager.sendGameStatus(NetworkGameState.StatusType.REMATCH_ACCEPT);
+                        resetGame();
                         gameTimer.resetTimer();
-                        Menu menu = new Menu(parentFrame);
+                        opponentRequestedRematch = false;
+                    } else {
+                        System.out.println("Trimit cerere de rematch...");
 
-                        parentFrame.getContentPane().removeAll();
-                        parentFrame.add(menu);
+                        networkManager.sendGameStatus(NetworkGameState.StatusType.REMATCH_REQUEST);
 
-                        if (playingWithAI)
-                            menu.robotGame();
-                        else {
-                            menu.startGame();
-                        }
+                        // --- ADD THIS LINE ---
+                        waitingForRematch = true;
+                        // ---------------------
+
+                        gameOverPanel.setTryAgainButtonText("Waiting... (1/2)");
+                        gameOverPanel.setTryAgainButtonEnabled(false);
                     }
-                },
-                () -> {
+                } else {
+                    // SINGLEPLAYER
+                    gameTimer.resetTimer();
+                    Menu menu = new Menu(parentFrame);
+
+                    parentFrame.getContentPane().removeAll();
+                    parentFrame.add(menu);
+
+                    if (playingWithAI)
+                        menu.robotGame();
+                    else {
+                        menu.startGame();
+                    }
+                }
+            },
+            () -> {
                 if (networkManager != null) {
                     networkManager.sendGameStatus(NetworkGameState.StatusType.REMATCH_DECLINE);
                 }
@@ -416,6 +428,29 @@ public class BoardPanel extends JPanel {
         repaint();
     }
 
+    private void updateComponentBounds() {
+        int boardSize = min(getWidth(), getHeight());
+        int sidePanelWidth = (int) (boardSize * SIDE_PANEL_RATIO);
+        int startX = (getWidth() - boardSize - sidePanelWidth) / 2;
+
+        // Update the panels
+        if (sidePanel != null) {
+            sidePanel.setBounds(startX + boardSize, 0, sidePanelWidth, getHeight());
+        }
+        if (gameOverPanel != null) {
+            gameOverPanel.setBounds(0, 0, getWidth(), getHeight());
+        }
+        if (menuPopUp != null) {
+            menuPopUp.setBounds(0, 0, getWidth(), getHeight());
+        }
+        if (promotionContainer != null) {
+            promotionContainer.setBounds(0, 0, getWidth(), getHeight());
+        }
+
+        // Force a repaint to update the board graphics with new dimensions
+        repaint();
+    }
+
     public void printGame(Graphics g){
         int boardSize = min(getWidth(), getHeight());
         int sidePanelWidth = (int) (boardSize *  SIDE_PANEL_RATIO);
@@ -445,17 +480,17 @@ public class BoardPanel extends JPanel {
         printPieces(g, boardParam, chessEngine.piecesArray);
 //        printTimer(g, boardParam);
 
-        sidePanel.setBounds(startX + boardSize,0, sidePanelWidth, getHeight());
+//        sidePanel.setBounds(startX + boardSize,0, sidePanelWidth, getHeight());
+//        gameOverPanel.setBounds(0,0, getWidth(), getHeight());
+//        menuPopUp.setBounds(0,0, getWidth(), getHeight());
+
 
         printMoves(chessEngine.getMovesArray(), g, boardParam);
-
-        gameOverPanel.setBounds(0,0, getWidth(), getHeight());
-        menuPopUp.setBounds(0,0, getWidth(), getHeight());
     }
 
     public void printBoard(Graphics g, BoardParameters boardParam){
         //Background-ul tablei + margine
-        setBackground(boardParam.backgroundColor);
+//        setBackground(boardParam.backgroundColor);
         g.fillRect(boardParam.startX,boardParam.startY,boardParam.boardSize,boardParam.boardSize);
 
         //Patratelele care au un offset de la margine
@@ -790,7 +825,7 @@ public class BoardPanel extends JPanel {
                     } else if(gameOverPanel != null && gameOverPanel.isVisible()) {
                             gameOverPanel.setTryAgainButtonText("Try Again (1/2) - Opponent Ready");
                             gameOverPanel.repaint();
-                        }
+                    }
                 }
                 case REMATCH_DECLINE-> {
                     if (gameOverPanel != null && gameOverPanel.isVisible()) {
