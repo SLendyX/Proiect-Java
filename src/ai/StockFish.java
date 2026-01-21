@@ -1,26 +1,53 @@
-package AI;
+package ai;
 
 import java.io.*;
+import java.nio.file.*;
 
 public class StockFish {
     private Process process;
     private volatile BufferedReader reader;
     private BufferedWriter writer;
 
-    public String getEnginePath(){
+    public String getEnginePath() throws IOException {
         String os = System.getProperty("os.name").toLowerCase();
-        String basePath = "src/data/ai/stockfish/";
+        String resourcePath = getResourcePath(os);
 
-        if (os.contains("win")) {
-            return basePath + "windows/stockfish-windows-x86-64-avx2.exe";
-        } else if (os.contains("mac")) {
-            return basePath + "macos/stockfish-macos-m1-apple-silicon";
-        } else if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
-            return basePath + "linux/stockfish-ubuntu-x86-64-avx2";
-        } else {
-            System.err.println("Sistem de operare necunoscut: " + os);
-            return null;
+        InputStream in = getClass().getResourceAsStream(resourcePath);
+
+        if (in == null) {
+            throw new IOException("Engine not found inside JAR at: " + resourcePath +
+                    "\nCHECK: Did you move the 'data' folder INSIDE the 'src' folder?");
         }
+
+        // 3. Create a temporary file on the real hard drive
+        File tempFile = File.createTempFile("stockfish_engine", os.contains("win") ? ".exe" : "");
+        tempFile.deleteOnExit(); // Clean up on exit
+
+        // 4. Copy the binary data from the JAR to the temp file
+        Files.copy(in, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        in.close();
+
+        // 5. Make it executable (Critical for Mac/Linux)
+        tempFile.setExecutable(true);
+
+        // 6. Return the path to the TEMP file, which ProcessBuilder can run
+        return tempFile.getAbsolutePath();
+    }
+
+    private static String getResourcePath(String os) {
+        String resourcePath = "";
+
+        // 1. Determine the path INSIDE the JAR (Note: No "src", starts with "/")
+        if (os.contains("win")) {
+            resourcePath = "/data/ai/stockfish/windows/stockfish-windows-x86-64-avx2.exe";
+        } else if (os.contains("mac")) {
+            resourcePath = "/data/ai/stockfish/macos/stockfish-macos-m1-apple-silicon";
+        } else if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
+            resourcePath = "/data/ai/stockfish/linux/stockfish-ubuntu-x86-64-avx2";
+        } else {
+            throw new RuntimeException("Sistem de operare necunoscut: " + os);
+        }
+        return resourcePath;
     }
 
     public boolean startEngine(int difficulty) {

@@ -1,6 +1,6 @@
 package board;
 
-import AI.StockFish;
+import ai.StockFish;
 import engine.ChessEngine;
 import engine.GameTimer;
 import engine.Move;
@@ -10,7 +10,6 @@ import network.NetworkManager;
 import pieces.Piece;
 
 import javax.swing.*;
-import javax.swing.border.*;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
@@ -35,7 +34,6 @@ public class BoardPanel extends JPanel {
     private GameOverPanel gameOverPanel;
     private MenuPopUp menuPopUp;
     private NetworkManager networkManager;
-    private NetworkGameState status;
     private boolean playingWithAI = false;
     private boolean isMyTurn;
     SidePanel sidePanel;
@@ -48,6 +46,7 @@ public class BoardPanel extends JPanel {
 
     public BoardPanel(JFrame parentFrame) {
         setBoardAtributes(parentFrame);
+
         this.isMyTurn = true;
         sidePanel.hideDrawButton();
 
@@ -220,6 +219,8 @@ public class BoardPanel extends JPanel {
         if(playingWithAI && boardParam.isReversed == chessEngine.getTurn()){
             return;
         }
+
+        if(gameTimer.isPaused()) return;
 
         if(gameOverPanel.isVisible()){
             return;
@@ -480,13 +481,6 @@ public class BoardPanel extends JPanel {
         );
 
         printPieces(g, boardParam, chessEngine.piecesArray);
-//        printTimer(g, boardParam);
-
-//        sidePanel.setBounds(startX + boardSize,0, sidePanelWidth, getHeight());
-//        gameOverPanel.setBounds(0,0, getWidth(), getHeight());
-//        menuPopUp.setBounds(0,0, getWidth(), getHeight());
-
-
         printMoves(chessEngine.getMovesArray(), g, boardParam);
     }
 

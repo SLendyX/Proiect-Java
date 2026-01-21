@@ -100,5 +100,6 @@ public class GameTimer implements Runnable{
     public void togglePause(){
         this.paused = !this.paused;
     }
+    public boolean isPaused(){return paused;}
 
 }
