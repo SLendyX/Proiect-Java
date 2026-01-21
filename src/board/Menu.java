@@ -23,7 +23,7 @@ public class Menu extends JPanel {
         this.parentFrame = frame;
         setLayout(new GridBagLayout());
 
-        // NOU: ÎNCARCĂ IMAGINEA
+        // ÎNCARCĂ IMAGINEA
         try {
             URL imageUrl = getClass().getResource("/data/background/shawty.png");
             if (imageUrl != null) {
@@ -45,6 +45,12 @@ public class Menu extends JPanel {
         JButton joinGame = new JButton("Join Game!");
         JButton robotGame = new  JButton("Play vs robot!");
         JButton exitGame = new JButton("Exit");
+
+        styleButton(startGame);
+        styleButton(hostGame);
+        styleButton(joinGame);
+        styleButton(robotGame);
+        styleButton(exitGame, new Color(192, 57, 43), new Color(231, 76, 60)); // Roșu pentru Exit
 
         Dimension buttonSize = new Dimension(250, 50);
         Font buttonFont = new Font("SansSerif", Font.PLAIN, 20);
@@ -91,6 +97,35 @@ public class Menu extends JPanel {
         grid.gridy=5;
         exitGame.addActionListener(e -> System.exit(0));
         add(exitGame, grid);
+    }
+
+    public static void styleButton(AbstractButton btn) {
+        styleButton(btn, new Color(44, 62, 80), new Color(52, 73, 94));
+    }
+
+    public static void styleButton(AbstractButton btn, Color bgColor, Color hoverColor) {
+        btn.setPreferredSize(new Dimension(250, 50));
+        btn.setFont(new Font("SansSerif", Font.BOLD, 18));
+        btn.setForeground(Color.WHITE);
+        btn.setBackground(bgColor);
+
+        // Elimină bordurile și focusul standard pentru un aspect plat (flat design)
+        btn.setFocusPainted(false);
+        btn.setBorderPainted(false);
+        btn.setOpaque(true);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        // Adaugă efectul vizual la trecerea mouse-ului
+        btn.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btn.setBackground(hoverColor);
+            }
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btn.setBackground(bgColor);
+            }
+        });
     }
 
     public void startGame(){
@@ -211,4 +246,5 @@ public class Menu extends JPanel {
         parentFrame.repaint();
         this.requestFocusInWindow();
     }
+
 }

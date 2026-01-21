@@ -49,12 +49,14 @@ public class BoardPanel extends JPanel {
     public BoardPanel(JFrame parentFrame) {
         setBoardAtributes(parentFrame);
         this.isMyTurn = true;
+        sidePanel.hideDrawButton();
+
     }
 
     public BoardPanel(JFrame parentFrame, boolean isWhite, int difficultyElo) {
         setBoardAtributes(parentFrame);
         this.isMyTurn = true;
-
+        sidePanel.hideDrawButton();
         boardParam.isReversed = !isWhite;
         this.difficultyElo = difficultyElo;
 

@@ -76,6 +76,7 @@ public class SidePanel extends JPanel {
         add(Box.createGlue(), gbc);
 
         // --- BUTTONS ---
+
         btnDraw = createClassicButton("Propose Draw");
         add(btnDraw, gbc);
 
@@ -125,6 +126,7 @@ public class SidePanel extends JPanel {
         add(btnAcceptDraw, gbc);
         gbc.gridy++;
         add(btnDeclineDraw, gbc);
+
 
         startUIUpdateLoop();
 
@@ -326,4 +328,10 @@ public class SidePanel extends JPanel {
         revalidate();
         repaint();
     }
+
+    public void hideDrawButton(){
+        btnDraw.setVisible(false);
+    }
+
+
 }

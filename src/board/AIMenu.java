@@ -2,7 +2,9 @@ package board;
 
 import javax.swing.*;
 import java.awt.*;
+import java.net.URL;
 import java.util.Hashtable;
+
 
 public class AIMenu extends JPanel {
     private final JFrame parentFrame;
@@ -10,11 +12,13 @@ public class AIMenu extends JPanel {
     private final JSlider difficultySlider;
     private JLabel eloLabel;
 
+
     // Button Group for Color Selection
     private final ButtonGroup colorGroup;
     private final JToggleButton whiteButton;
     private final JToggleButton blackButton;
     private final JToggleButton randomButton;
+    private Image backgroundImage;
 
     private static final int MIN_ELO = 250;
     private static final int MAX_ELO = 3000;
@@ -25,7 +29,7 @@ public class AIMenu extends JPanel {
         this.menuPanel = menu;
 
         setLayout(new GridBagLayout());
-        setBackground(new Color(50, 50, 50));
+        setBackground(new Color(44, 62, 80));
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(15, 15, 15, 15);
@@ -38,6 +42,18 @@ public class AIMenu extends JPanel {
         gbc.gridy = 0;
         add(titleLabel, gbc);
 
+        // POZA
+        try {
+            URL imageUrl = getClass().getResource("/data/background/AIbot.jpg");
+            if (imageUrl != null) {
+                this.backgroundImage = new ImageIcon(imageUrl).getImage();
+            } else {
+                System.err.println("Imaginea de fundal nu a fost găsită.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         // --- 2. Difficulty Slider ---
         difficultySlider = new JSlider(JSlider.HORIZONTAL, MIN_ELO, MAX_ELO, INITIAL_ELO);
         difficultySlider.setMajorTickSpacing(500);
@@ -47,13 +63,21 @@ public class AIMenu extends JPanel {
         difficultySlider.setPaintLabels(true);
 
         difficultySlider.setPreferredSize(new Dimension(450, 70));
-        difficultySlider.setBackground(new Color(50, 50, 50));
+        difficultySlider.setBackground(new Color(44, 62, 80));
         difficultySlider.setForeground(Color.WHITE);
 
         Hashtable<Integer, JLabel> labelTable = new Hashtable<>();
-        labelTable.put(MIN_ELO, new JLabel(MIN_ELO + " ELO"));
-        labelTable.put(MAX_ELO, new JLabel(MAX_ELO + " ELO"));
+        JLabel minLabel = new JLabel(MIN_ELO + " ELO");
+        minLabel.setForeground(Color.WHITE); // Setează culoarea dorită
+        labelTable.put(MIN_ELO, minLabel);
+
+        // Creăm eticheta pentru maxim
+        JLabel maxLabel = new JLabel(MAX_ELO + " ELO");
+        maxLabel.setForeground(Color.WHITE); // Setează culoarea dorită
+        labelTable.put(MAX_ELO, maxLabel);
         difficultySlider.setLabelTable(labelTable);
+
+
 
         difficultySlider.addChangeListener(e -> {
             if (!difficultySlider.getValueIsAdjusting()) {
@@ -75,7 +99,7 @@ public class AIMenu extends JPanel {
 
         // --- 4. Color Selection Buttons (NEW) ---
         JPanel colorPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
-        colorPanel.setBackground(new Color(50, 50, 50));
+        colorPanel.setBackground(new Color(50, 50, 50, 0));
 
         colorGroup = new ButtonGroup();
 
@@ -86,6 +110,7 @@ public class AIMenu extends JPanel {
         // Random Button (No image, just text/symbol)
         randomButton = createColorButton("Random", "src/data/background/random.png");
         styleButton(randomButton);
+
         randomButton.setSelected(true); // Default to Random
 
         colorGroup.add(whiteButton);
@@ -110,6 +135,7 @@ public class AIMenu extends JPanel {
         JButton backButton = new JButton("Back to Menu");
         backButton.setPreferredSize(new Dimension(250, 50));
         backButton.setFont(new Font("SansSerif", Font.PLAIN, 20));
+        Menu.styleButton(backButton, new Color(192, 57, 43), new Color(231, 76, 60));
 
         backButton.addActionListener(e -> {
             menuPanel.showMenu();
@@ -123,6 +149,8 @@ public class AIMenu extends JPanel {
         JButton startGameButton = new JButton("Start AI Game");
         startGameButton.setPreferredSize(new Dimension(250, 50));
         startGameButton.setFont(new Font("SansSerif", Font.PLAIN, 20));
+
+        styleButton(startGameButton);
 
         startGameButton.addActionListener(e -> {
             int selectedElo = difficultySlider.getValue();
@@ -153,12 +181,20 @@ public class AIMenu extends JPanel {
         return btn;
     }
 
-    // Helper to style the color buttons consistently
-    private void styleButton(JToggleButton btn) {
-        btn.setPreferredSize(new Dimension(80, 60));
-        btn.setFocusPainted(false);
-        btn.setFont(new Font("SansSerif", Font.BOLD, 12));
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        if (backgroundImage != null) {
+            // Desenează imaginea scalată pentru a umple întregul panou
+            g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+        }
     }
+
+    // Helper to style the color buttons consistently
+    public static void styleButton(AbstractButton btn) {
+       Menu.styleButton(btn, new Color(44, 62, 80), new Color(52, 73, 94));
+    }
+
 
     // Helper to get selected color string
     private boolean getSelectedColor() {
